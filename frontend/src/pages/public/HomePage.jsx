@@ -212,7 +212,7 @@ export default function HomePage() {
               onSubmit={handleSearch}
               aria-label="Search cases"
             >
-              <label htmlFor="home-search-input" className="sr-only">
+              <label htmlFor="home-search-input" className="home-search__label">
                 Search by name, case number or place
               </label>
               <input

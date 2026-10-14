@@ -44,6 +44,18 @@
   max-width: 560px;
 }
 
+.home-search__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .home-search__form {
   display: flex;
   gap: 0;
@@ -457,6 +469,15 @@
   }
   .home-hero__ctas .btn {
     width: 100%;
+    justify-content: center;
+  }
+  .home-search__form {
+    flex-direction: column;
+  }
+  .home-search__input {
+    min-height: 48px;
+  }
+  .home-search__btn {
     justify-content: center;
   }
 }

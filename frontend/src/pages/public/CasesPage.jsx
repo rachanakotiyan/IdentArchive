@@ -256,9 +256,30 @@ export default function CasesPage() {
 
       <section className="cases-search" aria-label="Case search and filters">
         <div className="cases-kind-switch" role="group" aria-label="Case type">
-          <Button variant={filters.kind === 'missing' ? 'solid' : 'outline'} onClick={() => updateParams({ kind: 'missing' })}>Missing</Button>
-          <Button variant={filters.kind === 'found' ? 'solid' : 'outline'} onClick={() => updateParams({ kind: 'found' })}>Found</Button>
-          <Button variant={!filters.kind ? 'solid' : 'outline'} size="sm" onClick={() => updateParams({ kind: '' })}>All cases</Button>
+          <button
+            type="button"
+            className="cases-kind-switch__option"
+            aria-pressed={filters.kind === 'missing'}
+            onClick={() => updateParams({ kind: 'missing' })}
+          >
+            Missing
+          </button>
+          <button
+            type="button"
+            className="cases-kind-switch__option"
+            aria-pressed={filters.kind === 'found'}
+            onClick={() => updateParams({ kind: 'found' })}
+          >
+            Found
+          </button>
+          <button
+            type="button"
+            className="cases-kind-switch__option"
+            aria-pressed={!filters.kind}
+            onClick={() => updateParams({ kind: '' })}
+          >
+            All cases
+          </button>
         </div>
 
         <CaseSearchForm

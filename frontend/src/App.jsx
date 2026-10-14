@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { RequireAuth, RequireRole } from './components/guards/RouteGuards.jsx';
+import { PublicLayout } from './components/layout/PublicLayout.jsx';
 import WelcomePage from './pages/public/WelcomePage.jsx';
 import HomePage from './pages/public/HomePage.jsx';
 import CasesPage from './pages/public/CasesPage.jsx';
@@ -35,8 +36,8 @@ function App() {
     <Routes>
       <Route path="/" element={<WelcomePage />} />
       <Route path="/home" element={<HomePage />} />
-      <Route path="/cases" element={<CasesPage />} />
-      <Route path="/cases/:caseId" element={<CaseDetailPage />} />
+      <Route path="/cases" element={<PublicLayout><CasesPage /></PublicLayout>} />
+      <Route path="/cases/:caseId" element={<PublicLayout><CaseDetailPage /></PublicLayout>} />
       <Route path="/report/new" element={<RequireAuth><SubmitReportPage /></RequireAuth>} />
       <Route path="/report/confirmation/:referenceNo" element={<ReportConfirmationPage />} />
       <Route path="/track" element={<TrackReportPage />} />
