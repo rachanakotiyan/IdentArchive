@@ -1,0 +1,25 @@
+/* InternalPanel – staff-only content wrapper */
+.internal-panel {
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  padding: var(--sp-4);
+}
+
+.internal-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.internal-panel__icon {
+  color: var(--muted);
+  flex-shrink: 0;
+}

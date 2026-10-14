@@ -1,0 +1,24 @@
+/* Banner component */
+.banner {
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  margin-bottom: var(--sp-4);
+}
+
+.banner__icon { flex-shrink: 0; margin-top: 1px; }
+.banner__content { flex: 1; }
+.banner__title { font-weight: 600; margin-bottom: var(--sp-1); }
+
+.banner--info    { background: var(--accent-subtle);  border-color: var(--accent);  color: var(--ink); }
+.banner--info .banner__icon    { color: var(--accent);  }
+.banner--success { background: var(--success-subtle); border-color: var(--success); color: var(--ink); }
+.banner--success .banner__icon { color: var(--success); }
+.banner--warning { background: var(--warning-subtle); border-color: var(--warning); color: var(--ink); }
+.banner--warning .banner__icon { color: var(--warning); }
+.banner--error   { background: var(--danger-subtle);  border-color: var(--danger);  color: var(--ink); }
+.banner--error .banner__icon   { color: var(--danger);  }

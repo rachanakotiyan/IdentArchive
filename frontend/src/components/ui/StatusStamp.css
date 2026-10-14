@@ -1,0 +1,40 @@
+/* StatusStamp component */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid currentColor;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Case statuses ───────────────────────────────────────── */
+.stamp--case-open         { color: var(--accent);  background: var(--accent-subtle);  }
+.stamp--case-under_review { color: var(--warning); background: var(--warning-subtle); }
+.stamp--case-resolved     { color: var(--success); background: var(--success-subtle); }
+.stamp--case-closed       { color: var(--muted);   background: var(--surface-2);      }
+
+/* ── Report statuses ─────────────────────────────────────── */
+.stamp--report-submitted      { color: var(--accent);  background: var(--accent-subtle);  }
+.stamp--report-under_review   { color: var(--warning); background: var(--warning-subtle); }
+.stamp--report-info_requested { color: var(--warning); background: var(--warning-subtle); }
+.stamp--report-approved       { color: var(--success); background: var(--success-subtle); }
+.stamp--report-rejected       { color: var(--danger);  background: var(--danger-subtle);  }
+.stamp--report-closed         { color: var(--muted);   background: var(--surface-2);      }
+
+/* ── Match statuses ──────────────────────────────────────── */
+.stamp--match-pending   { color: var(--warning); background: var(--warning-subtle); }
+.stamp--match-confirmed { color: var(--success); background: var(--success-subtle); }
+.stamp--match-dismissed { color: var(--muted);   background: var(--surface-2);      }
+
+/* ── Priority ────────────────────────────────────────────── */
+.stamp--priority-low    { color: var(--muted);   background: var(--surface-2);      }
+.stamp--priority-normal { color: var(--accent);  background: var(--accent-subtle);  }
+.stamp--priority-high   { color: var(--warning); background: var(--warning-subtle); }
+.stamp--priority-urgent { color: var(--danger);  background: var(--danger-subtle);  }

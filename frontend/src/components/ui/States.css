@@ -1,0 +1,38 @@
+/* EmptyState + ErrorState */
+.empty-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-12) var(--sp-6);
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state__icon,
+.error-state__icon {
+  color: var(--line);
+  margin-bottom: var(--sp-1);
+}
+
+.error-state__icon {
+  color: var(--danger);
+  opacity: 0.6;
+}
+
+.empty-state__title,
+.error-state__title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.empty-state__description,
+.error-state__description {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  max-width: 40ch;
+  line-height: var(--leading-loose);
+}

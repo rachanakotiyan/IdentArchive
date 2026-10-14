@@ -1,0 +1,32 @@
+/* Skeleton loader */
+.skeleton {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s ease-in-out infinite;
+  display: block;
+}
+
+@keyframes shimmer {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.skeleton--text {
+  height: 1em;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton--rect {
+  border-radius: var(--radius-md);
+}
+
+.skeleton--circle {
+  border-radius: var(--radius-full);
+}
+
+/* Pre-built block sizes */
+.skeleton--sm  { height: 12px; }
+.skeleton--md  { height: 16px; }
+.skeleton--lg  { height: 24px; }
+.skeleton--xl  { height: 48px; }

@@ -1,0 +1,77 @@
+/* Stepper (progress bar for report wizard) */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: var(--sp-6);
+}
+
+.stepper__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: 1;
+}
+
+.stepper__connector {
+  flex: 1;
+  height: 2px;
+  background: var(--line);
+  transition: background var(--transition-base);
+  margin-bottom: 20px; /* align with circles */
+}
+
+.stepper__connector--done {
+  background: var(--accent);
+}
+
+.stepper__circle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.stepper__step--active .stepper__circle {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.stepper__step--done .stepper__circle {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.stepper__label {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.stepper__step--active .stepper__label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.stepper__step--done .stepper__label {
+  color: var(--ink);
+}
+
+/* Mobile: hide labels below 480px */
+@media (max-width: 480px) {
+  .stepper__label { display: none; }
+}

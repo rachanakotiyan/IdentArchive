@@ -1,0 +1,40 @@
+/* Logo component */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  text-decoration: none;
+  color: currentColor;
+  line-height: 1;
+}
+
+.logo:hover { text-decoration: none; }
+.logo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.logo__badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border: 1.5px solid var(--accent);
+}
+
+.logo__wordmark {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-md);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.logo__wordmark span {
+  color: var(--accent);
+}
