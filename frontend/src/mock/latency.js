@@ -27,8 +27,12 @@ export function withLatency(valueOrFn) {
         reject(new Error('Simulated server error (mockConfig.simulateErrors = true)'));
         return;
       }
-      const value = typeof valueOrFn === 'function' ? valueOrFn() : valueOrFn;
-      resolve(value);
+      try {
+        const value = typeof valueOrFn === 'function' ? valueOrFn() : valueOrFn;
+        resolve(value);
+      } catch (error) {
+        reject(error);
+      }
     }, delay);
   });
 }
