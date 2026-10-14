@@ -37,8 +37,8 @@ frontend/
 
 The login page includes mock demo accounts for testing the UI. These credentials are for the frontend demo only and are marked as `mock data only, not real credentials`.
 
-- Individual user: `individual@example.com` / `Password123!`
-- Officer: `officer@example.com` / `Password123!`
-- Admin: `admin@example.com` / `Password123!`
+- Public user: `priya@demo.test` / `demo1234`
+- Officer: `officer@demo.test` / `demo1234`
+- Admin: `admin@demo.test` / `demo1234`
 
 Use these only for local mock testing, not for any real service or production environment.

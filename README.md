@@ -33,8 +33,8 @@ The app runs at the local Vite URL shown in the terminal, usually `http://localh
 
 The frontend includes mock demo accounts for local testing. These are marked as `mock data only, not real credentials`.
 
-- Individual user: `individual@example.com` / `Password123!`
-- Officer: `officer@example.com` / `Password123!`
-- Admin: `admin@example.com` / `Password123!`
+- Public user: `priya@demo.test` / `demo1234`
+- Officer: `officer@demo.test` / `demo1234`
+- Admin: `admin@demo.test` / `demo1234`
 
 Use them only for the local mock UI experience, not for any live or production service.

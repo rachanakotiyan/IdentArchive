@@ -1,5 +1,5 @@
 import { StaffLayout } from '../../components/layout/StaffLayout.jsx';
-import { useDocumentTitle } from '../PlaceholderPage.jsx';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 
 export default function DashboardPage() {
   useDocumentTitle('Dashboard');

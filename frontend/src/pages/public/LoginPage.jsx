@@ -1,5 +1,5 @@
 import { PublicLayout } from '../../components/layout/PublicLayout.jsx';
-import { useDocumentTitle } from '../PlaceholderPage.jsx';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 
 export default function LoginPage() {
   useDocumentTitle('Log in');

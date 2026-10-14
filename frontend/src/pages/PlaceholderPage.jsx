@@ -27,6 +27,10 @@ function PlaceholderShell({ title, description, layout = 'public' }) {
   );
 }
 
+export default function PlaceholderPage({ title = 'Placeholder', description = 'This page is a placeholder.', layout = 'public' }) {
+  return <PlaceholderShell title={title} description={description} layout={layout} />;
+}
+
 export function PublicPlaceholderPage({ title, description }) {
   return <PlaceholderShell title={title} description={description} layout="public" />;
 }
