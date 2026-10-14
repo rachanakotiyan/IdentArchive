@@ -49,7 +49,7 @@ function toTrackView(r) {
  * Submit a new report.
  * Returns only the referenceNo (no internal details).
  */
-export async function submitReport(payload) {
+export async function submitReport(_payload) {
   return withLatency(() => {
     const refDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const refNo = `REF-${refDate}-${String(MOCK_REPORTS.length + 1).padStart(3, '0')}`;

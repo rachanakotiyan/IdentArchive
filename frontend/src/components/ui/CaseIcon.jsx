@@ -1,18 +1,29 @@
-import { getCaseIcon } from '../../utils/caseIcons.js';
+import {
+  AlertTriangle,
+  File,
+  HelpCircle,
+  Navigation,
+  ShieldAlert,
+  Truck,
+  UserX,
+  Users,
+} from 'lucide-react';
 
-/**
- * CaseIcon
- * Renders the Lucide icon for a given crimeType.
- * @param {string}  crimeType
- * @param {'sm'|'md'|'lg'} size  - sm=16, md=24, lg=40
- * @param {string}  className
- * @param {string}  color     - CSS color (defaults to currentColor)
- */
 const SIZE_MAP = { sm: 16, md: 24, lg: 40 };
+const CASE_ICON_MAP = {
+  missing_person: UserX,
+  unidentified_person: HelpCircle,
+  abduction: ShieldAlert,
+  runaway: Navigation,
+  trafficking: Truck,
+  domestic_violence: AlertTriangle,
+  group_missing: Users,
+  other: File,
+};
 
 export default function CaseIcon({ crimeType, size = 'md', className = '', color }) {
-  const Icon = getCaseIcon(crimeType);
-  const px   = SIZE_MAP[size] ?? SIZE_MAP.md;
+  const Icon = CASE_ICON_MAP[crimeType] ?? File;
+  const px = SIZE_MAP[size] ?? SIZE_MAP.md;
 
   return (
     <Icon

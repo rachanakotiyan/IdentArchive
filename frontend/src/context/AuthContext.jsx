@@ -1,22 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import * as authService from '../services/authService.js';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './authContext.js';
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Hydrate from session on mount
-  useEffect(() => {
-    const stored = authService.getCurrentUser();
-    setUser(stored);
-    setLoading(false);
-  }, []);
+  const [user, setUser] = useState(() => authService.getCurrentUser());
+  const [loading, setLoading] = useState(false);
 
   const login = useCallback(async (credentials) => {
     const u = await authService.login(credentials);
     setUser(u);
+    setLoading(false);
     return u;
   }, []);
 
@@ -27,8 +20,6 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (payload) => {
     return authService.register(payload);
-    // Note: registration doesn't auto-login in the mock;
-    // user is directed to verify email first.
   }, []);
 
   return (
@@ -36,10 +27,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
-  return ctx;
 }

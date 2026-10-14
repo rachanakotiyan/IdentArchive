@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-
-const ThemeContext = createContext(null);
+import { useEffect, useState } from 'react';
+import { ThemeContext } from './themeContext.js';
 
 function getInitialTheme() {
   try {
@@ -9,7 +8,7 @@ function getInitialTheme() {
   } catch {
     // localStorage unavailable
   }
-  return null; // null = follow system
+  return null;
 }
 
 function applyTheme(theme) {
@@ -29,15 +28,14 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(current => {
-      // Determine effective current theme
+    setTheme((current) => {
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const effective = current ?? (systemDark ? 'dark' : 'light');
       const next = effective === 'dark' ? 'light' : 'dark';
       try {
         localStorage.setItem('ia-theme', next);
       } catch {
-        // Storage unavailable; continue without persisting
+        // ignore
       }
       return next;
     });
@@ -56,14 +54,13 @@ export function ThemeProvider({ children }) {
     }
   };
 
-  // Derive the effective theme for consumers that need to know
   const [systemPrefersDark, setSystemPrefersDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches
   );
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e) => setSystemPrefersDark(e.matches);
+    const handler = (event) => setSystemPrefersDark(event.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
@@ -75,10 +72,4 @@ export function ThemeProvider({ children }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used inside ThemeProvider');
-  return ctx;
 }

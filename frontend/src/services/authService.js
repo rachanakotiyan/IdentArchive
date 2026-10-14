@@ -34,10 +34,10 @@ export function getCurrentUser() {
   }
 }
 
-export async function login({ email, password }) {
+export async function login({ email, password: _password }) {
   return withLatency(() => {
     const user = MOCK_USERS.find(
-      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      u => u.email.toLowerCase() === email.toLowerCase() && u.password === _password
     );
     if (!user) {
       throw new Error('Invalid email or password.');
@@ -73,14 +73,14 @@ export async function logout() {
   });
 }
 
-export async function requestPasswordReset({ email }) {
+export async function requestPasswordReset({ email: _email }) {
   return withLatency(() => {
     // Always return success so we don't leak whether an email exists
     return { sent: true };
   });
 }
 
-export async function resetPassword({ token, newPassword }) {
+export async function resetPassword({ token, newPassword: _newPassword }) {
   return withLatency(() => {
     if (!token || token.length < 4) {
       throw new Error('Invalid or expired reset token.');

@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
-import Spinner from '../components/ui/Spinner.jsx';
+import { useAuth } from '../../context/useAuth.js';
+import Spinner from '../ui/Spinner.jsx';
 
 /**
  * RequireAuth – redirects to /login if not authenticated.
