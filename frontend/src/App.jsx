@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { RequireAuth, RequireRole } from './components/guards/RouteGuards.jsx';
 import WelcomePage from './pages/public/WelcomePage.jsx';
@@ -24,6 +25,10 @@ import MatchDetailPage from './pages/staff/MatchDetailPage.jsx';
 import UsersPage from './pages/staff/admin/UsersPage.jsx';
 import OfficersPage from './pages/staff/admin/OfficersPage.jsx';
 import NotFoundPage from './pages/public/NotFoundPage.jsx';
+
+const DevComponentsPage = import.meta.env.DEV
+  ? React.lazy(() => import('./pages/dev/ComponentsPage.jsx'))
+  : null;
 
 function App() {
   return (
@@ -52,6 +57,17 @@ function App() {
       <Route path="/staff/matches/:matchId" element={<RequireRole allowedRoles={['officer', 'admin']}><MatchDetailPage /></RequireRole>} />
       <Route path="/staff/admin/users" element={<RequireRole allowedRoles={['admin']}><UsersPage /></RequireRole>} />
       <Route path="/staff/admin/officers" element={<RequireRole allowedRoles={['admin']}><OfficersPage /></RequireRole>} />
+
+      {import.meta.env.DEV && DevComponentsPage && (
+        <Route
+          path="/dev/components"
+          element={(
+            <Suspense fallback={<div style={{ padding: '32px', textAlign: 'center' }}>Loading component gallery…</div>}>
+              <DevComponentsPage />
+            </Suspense>
+          )}
+        />
+      )}
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
