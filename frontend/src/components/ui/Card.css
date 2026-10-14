@@ -11,7 +11,7 @@
   cursor: pointer;
 }
 .card--interactive:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px var(--shadow-xs);
 }
 .card--interactive:focus-visible {
   outline: 2px solid var(--accent);
@@ -20,5 +20,5 @@
 
 .card--flush { padding: 0; }
 .card--raised {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px var(--shadow-xs);
 }

@@ -1,28 +1,51 @@
+@import './styles/tokens.css';
+
 :root {
-  font-family: system-ui, sans-serif;
-  color: #172033;
-  background: #f5f7fa;
+  font-family: var(--font-sans);
+  line-height: var(--leading-normal);
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
 
-  font-optical-sizing: auto;
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
 }
 
 body {
+  margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
 }
 
-h1 {
-  margin: 0 0 1rem;
-  font-size: clamp(2.5rem, 8vw, 4rem);
-  line-height: 1.1;
+img,
+svg {
+  display: block;
+  max-width: 100%;
 }
 
-p {
-  max-width: 42rem;
-  line-height: 1.6;
+a {
+  color: inherit;
 }
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+

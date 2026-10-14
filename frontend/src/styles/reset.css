@@ -99,7 +99,7 @@ hr {
 /* ── Selection ───────────────────────────────────────────── */
 ::selection {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* ── Code ────────────────────────────────────────────────── */

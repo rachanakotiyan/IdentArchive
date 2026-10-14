@@ -48,7 +48,7 @@ export async function login({ email, password: _password }) {
   });
 }
 
-export async function register({ name, email, password, phone }) {
+export async function register({ name, email, password: _password, phone }) {
   return withLatency(() => {
     const existing = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {

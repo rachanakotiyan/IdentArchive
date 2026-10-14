@@ -46,7 +46,7 @@
 .stepper__step--active .stepper__circle {
   border-color: var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .stepper__step--done .stepper__circle {

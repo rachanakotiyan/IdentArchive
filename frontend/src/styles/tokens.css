@@ -24,6 +24,7 @@
   --danger:  #C23B36;
   --success: #2E8B67;
   --warning: #B9791A;
+  --on-accent: #FFFFFF;
 
   /* Derived / interactive */
   --accent-hover:    #1f5a9a;
@@ -31,6 +32,13 @@
   --danger-subtle:   #fdf0ef;
   --success-subtle:  #edf7f3;
   --warning-subtle:  #fdf6e8;
+
+  /* Surface overlays and shadows */
+  --overlay-soft: rgba(15, 20, 25, 0.45);
+  --overlay:      rgba(15, 20, 25, 0.5);
+  --shadow-xs:    rgba(15, 20, 25, 0.12);
+  --shadow-sm:    rgba(15, 20, 25, 0.14);
+  --shadow-md:    rgba(15, 20, 25, 0.2);
 
   /* Focus ring */
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
@@ -106,12 +114,19 @@
     --danger:  #E0524D;
     --success: #4FB286;
     --warning: #E0A63A;
+    --on-accent: #FFFFFF;
 
     --accent-hover:    #74b5f0;
     --accent-subtle:   #1a2d42;
     --danger-subtle:   #2d1614;
     --success-subtle:  #122b20;
     --warning-subtle:  #2d1f08;
+
+    --overlay-soft: rgba(15, 20, 25, 0.45);
+    --overlay:      rgba(15, 20, 25, 0.5);
+    --shadow-xs:    rgba(15, 20, 25, 0.12);
+    --shadow-sm:    rgba(15, 20, 25, 0.14);
+    --shadow-md:    rgba(15, 20, 25, 0.2);
   }
 }
 
@@ -129,12 +144,19 @@
   --danger:  #E0524D;
   --success: #4FB286;
   --warning: #E0A63A;
+  --on-accent: #FFFFFF;
 
   --accent-hover:    #74b5f0;
   --accent-subtle:   #1a2d42;
   --danger-subtle:   #2d1614;
   --success-subtle:  #122b20;
   --warning-subtle:  #2d1f08;
+
+  --overlay-soft: rgba(15, 20, 25, 0.45);
+  --overlay:      rgba(15, 20, 25, 0.5);
+  --shadow-xs:    rgba(15, 20, 25, 0.12);
+  --shadow-sm:    rgba(15, 20, 25, 0.14);
+  --shadow-md:    rgba(15, 20, 25, 0.2);
 }
 
 /* ── Light (explicit user toggle) ───────────────────────── */
@@ -151,10 +173,17 @@
   --danger:  #C23B36;
   --success: #2E8B67;
   --warning: #B9791A;
+  --on-accent: #FFFFFF;
 
   --accent-hover:    #1f5a9a;
   --accent-subtle:   #e8f0fa;
   --danger-subtle:   #fdf0ef;
   --success-subtle:  #edf7f3;
   --warning-subtle:  #fdf6e8;
+
+  --overlay-soft: rgba(15, 20, 25, 0.45);
+  --overlay:      rgba(15, 20, 25, 0.5);
+  --shadow-xs:    rgba(15, 20, 25, 0.12);
+  --shadow-sm:    rgba(15, 20, 25, 0.14);
+  --shadow-md:    rgba(15, 20, 25, 0.2);
 }

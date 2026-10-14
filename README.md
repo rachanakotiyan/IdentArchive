@@ -1,52 +1,40 @@
 # IdentArchive
 
-IdentArchive is a planned system for managing missing and unidentified person records. This repository currently contains only the initial frontend and backend scaffolding; application features, API endpoints, and database tables will be added step by step.
+IdentArchive is a mock-first case management frontend for missing and unidentified person records. The repository currently includes the frontend app and supporting project files for local UI development.
+
+## Frontend
+
+Run the frontend from the repository root:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The app runs at the local Vite URL shown in the terminal, usually `http://localhost:5173`.
 
 ## Project structure
 
-- `frontend/` - React application built with Vite.
-- `backend/` - Express server and the future REST API.
-- `database/scripts/` - Reserved for future MySQL setup and migration scripts.
-- `docs/` - Reserved for project documentation.
-
-The backend will keep HTTP routes, business logic, and database access in separate layers as those features are introduced.
-
-## Requirements
-
-- Node.js 20.19+ or 22.12+
-- npm
-- MySQL will be needed when database integration is implemented.
-
-## Setup
-
-Install frontend dependencies:
-
-```powershell
-Set-Location frontend
-npm install
+```text
+.
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── README.md
+├── backend/
+├── database/
+├── docs/
+├── README.md
+└── package.json
 ```
 
-In one terminal, start the frontend development server:
+## Demo accounts
 
-```powershell
-Set-Location frontend
-npm run dev
-```
+The frontend includes mock demo accounts for local testing. These are marked as `mock data only, not real credentials`.
 
-In a second terminal, install backend dependencies:
+- Individual user: `individual@example.com` / `Password123!`
+- Officer: `officer@example.com` / `Password123!`
+- Admin: `admin@example.com` / `Password123!`
 
-```powershell
-Set-Location backend
-npm install
-```
-
-Then start the backend in development mode:
-
-```powershell
-Set-Location backend
-npm run dev
-```
-
-The frontend runs on Vite's displayed local URL (usually `http://localhost:5173`). The backend listens on port `3000` by default. Set `PORT` in `backend/.env` to choose a different backend port; use `backend/.env.example` as a reference and never put real secrets in version control.
-
-There are no API endpoints or database tables yet. The backend currently only starts an Express server.
+Use them only for the local mock UI experience, not for any live or production service.

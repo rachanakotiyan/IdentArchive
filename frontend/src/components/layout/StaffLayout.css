@@ -75,7 +75,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 0.5rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 8px 24px var(--shadow-sm);
   z-index: 30;
   display: grid;
   gap: 0.25rem;
@@ -166,7 +166,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-soft);
   z-index: 35;
 }
 

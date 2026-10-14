@@ -153,7 +153,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   min-width: 160px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px var(--shadow-xs);
   z-index: var(--z-dropdown);
   overflow: hidden;
   animation: dropIn 0.12s ease;
@@ -205,7 +205,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: var(--overlay);
   z-index: var(--z-overlay);
 }
 
@@ -258,7 +258,7 @@
 
 .pub-footer__helpline-strip {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-accent);
   padding: var(--sp-3) var(--sp-4);
 }
 

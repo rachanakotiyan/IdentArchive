@@ -87,7 +87,7 @@
 }
 .pagination__btn[aria-current="page"] {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 .pagination__btn:focus-visible {
