@@ -3,7 +3,9 @@ import { Bell, ChevronLeft, ChevronRight, Menu, Moon, Sun, UserCircle2, X } from
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth.js';
 import { useTheme } from '../../context/useTheme.js';
+import { useToast } from '../../context/useToast.js';
 import Logo from '../ui/Logo.jsx';
+import './StaffLayout.css';
 
 const staffItems = [
   { to: '/staff', label: 'Dashboard' },
@@ -19,6 +21,7 @@ const adminItems = [
 
 export function StaffLayout({ children }) {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const { effectiveTheme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('ia-staff-sidebar');
@@ -34,8 +37,12 @@ export function StaffLayout({ children }) {
   const visibleItems = user?.role === 'admin' ? [...staffItems, ...adminItems] : staffItems;
 
   const handleLogout = async () => {
-    await logout();
-    setAccountOpen(false);
+    try {
+      await logout();
+      setAccountOpen(false);
+    } catch {
+      toast({ message: 'Could not log out. Please try again.', type: 'error' });
+    }
   };
 
   return (
@@ -56,14 +63,24 @@ export function StaffLayout({ children }) {
             {effectiveTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           <div className="staff-account-menu">
-            <button type="button" className="staff-account-btn" onClick={() => setAccountOpen((open) => !open)}>
+            <button
+              type="button"
+              className="staff-account-btn"
+              aria-expanded={accountOpen}
+              aria-haspopup="menu"
+              onClick={() => setAccountOpen((open) => !open)}
+            >
               <UserCircle2 size={18} />
               <span>{user?.name || 'Staff'}</span>
             </button>
             {accountOpen && (
-              <div className="staff-account-dropdown">
-                <Link to="/home" onClick={() => setAccountOpen(false)}>Public site</Link>
-                <button type="button" onClick={handleLogout}>Log out</button>
+              <div className="staff-account-dropdown" role="menu">
+                <div className="staff-account-dropdown__identity">
+                  <strong>{user?.name || 'Staff'}</strong>
+                  <span>{user?.role}</span>
+                </div>
+                <Link role="menuitem" to="/home" onClick={() => setAccountOpen(false)}>Public site</Link>
+                <button role="menuitem" type="button" onClick={handleLogout}>Log out</button>
               </div>
             )}
           </div>

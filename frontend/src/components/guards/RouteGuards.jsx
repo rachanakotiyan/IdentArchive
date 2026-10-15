@@ -18,14 +18,18 @@ export function RequireAuth({ children }) {
 }
 
 /**
- * RequireRole – shows "No access" if the user's role is not in allowedRoles.
- * Must be used inside RequireAuth.
+ * RequireRole – redirects signed-out users and denies authenticated users
+ * whose role is not in allowedRoles.
  * @param {string[]} allowedRoles
  */
 export function RequireRole({ allowedRoles, children }) {
   const { user } = useAuth();
+  const location = useLocation();
 
-  if (!user || !allowedRoles.includes(user.role)) {
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  if (!allowedRoles.includes(user.role)) {
     return <NoAccessPage />;
   }
   return children;

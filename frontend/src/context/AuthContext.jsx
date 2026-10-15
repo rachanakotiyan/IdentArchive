@@ -7,10 +7,14 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
 
   const login = useCallback(async (credentials) => {
-    const u = await authService.login(credentials);
-    setUser(u);
-    setLoading(false);
-    return u;
+    setLoading(true);
+    try {
+      const u = await authService.login(credentials);
+      setUser(u);
+      return u;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const logout = useCallback(async () => {

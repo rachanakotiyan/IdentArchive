@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { ChevronDown, Menu, Moon, Sun, X } from 'lucide-react';
 import { useAuth } from '../../context/useAuth.js';
 import { useTheme } from '../../context/useTheme.js';
+import { useToast } from '../../context/useToast.js';
 import Logo from '../ui/Logo.jsx';
 import './PublicLayout.css';
 
@@ -16,13 +17,18 @@ const NAV_ITEMS = [
 
 export function PublicLayout({ children }) {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const { effectiveTheme, toggleTheme } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    setAccountOpen(false);
+    try {
+      await logout();
+      setAccountOpen(false);
+    } catch {
+      toast({ message: 'Could not log out. Please try again.', type: 'error' });
+    }
   };
 
   return (
@@ -49,9 +55,7 @@ export function PublicLayout({ children }) {
 
         <nav className="pub-navbar" aria-label="Main navigation">
           <div className="pub-navbar__inner">
-            <Link to="/" aria-label="IdentArchive home">
-              <Logo size={30} showWordmark={false} />
-            </Link>
+            <Logo size={30} showWordmark={false} />
 
             <div className="pub-navbar__nav">
               {NAV_ITEMS.map((item) => (
@@ -69,15 +73,27 @@ export function PublicLayout({ children }) {
                 </>
               ) : (
                 <div className="pub-account-menu">
-                  <button type="button" className="pub-account-btn" onClick={() => setAccountOpen((open) => !open)}>
+                  <button
+                    type="button"
+                    className="pub-account-btn"
+                    aria-expanded={accountOpen}
+                    aria-haspopup="menu"
+                    onClick={() => setAccountOpen((open) => !open)}
+                  >
                     <span>{user.name || 'Account'}</span>
                     <ChevronDown size={14} />
                   </button>
                   {accountOpen && (
-                    <div className="pub-account-dropdown">
-                      <Link to="/my-reports" onClick={() => setAccountOpen(false)}>My reports</Link>
-                      <Link to="/track" onClick={() => setAccountOpen(false)}>Track report</Link>
-                      <button type="button" onClick={handleLogout}>Log out</button>
+                    <div className="pub-account-dropdown" role="menu">
+                      <div className="pub-account-dropdown__identity">
+                        <strong>{user.name || 'Account'}</strong>
+                        <span>{user.role}</span>
+                      </div>
+                      {user.role === 'individual' && (
+                        <Link role="menuitem" to="/my-reports" onClick={() => setAccountOpen(false)}>My reports</Link>
+                      )}
+                      <Link role="menuitem" to="/track" onClick={() => setAccountOpen(false)}>Track report</Link>
+                      <button role="menuitem" type="button" onClick={handleLogout}>Log out</button>
                     </div>
                   )}
                 </div>
@@ -162,7 +178,13 @@ export function PublicLayout({ children }) {
           </>
         ) : (
           <>
-            <Link to="/my-reports" className="pub-nav-link" onClick={() => setDrawerOpen(false)}>My reports</Link>
+            <div className="pub-drawer__identity">
+              <strong>{user.name || 'Account'}</strong>
+              <span>{user.role}</span>
+            </div>
+            {user.role === 'individual' && (
+              <Link to="/my-reports" className="pub-nav-link" onClick={() => setDrawerOpen(false)}>My reports</Link>
+            )}
             <button type="button" className="pub-nav-link" onClick={() => { setDrawerOpen(false); handleLogout(); }}>Log out</button>
           </>
         )}
