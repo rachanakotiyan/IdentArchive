@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -51,36 +51,44 @@ export default function StaffReportDetailPage() {
   // Dropdown states
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useDocumentTitle(report ? `Report ${report.referenceNo}` : 'Report Detail');
 
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setReloadKey((key) => key + 1);
+  }, []);
+
   useEffect(() => {
     let ignore = false;
-    async function loadDetail() {
+    async function fetchDetail() {
       try {
         const [reportData, officersData] = await Promise.all([
           getReport(reportId),
-          listOfficers().catch(() => []),
+          listOfficers().catch(() => ({ items: [] })),
         ]);
         if (!ignore) {
           setReport(reportData);
-          setOfficers(officersData);
+          setOfficers(officersData.items);
           setSelectedOfficerId(reportData.assignedOfficer?.officerId || '');
           setSelectedPriority(reportData.priority || 'normal');
-          setLoading(false);
+          setError(null);
         }
       } catch (err) {
         if (!ignore) {
           setError(err instanceof Error ? err.message : 'Could not load report details.');
-          setLoading(false);
         }
+      } finally {
+        if (!ignore) setLoading(false);
       }
     }
-    loadDetail();
+    fetchDetail();
     return () => {
       ignore = true;
     };
-  }, [reportId]);
+  }, [reloadKey, reportId]);
 
   // 1. Approve action (creates a case in the mock)
   const handleApprove = async () => {

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth, RequireRole } from './components/guards/RouteGuards.jsx';
 import { PublicLayout } from './components/layout/PublicLayout.jsx';
 import WelcomePage from './pages/public/WelcomePage.jsx';
@@ -10,6 +10,7 @@ import SubmitReportPage from './pages/report/SubmitReportPage.jsx';
 import ReportConfirmationPage from './pages/report/ReportConfirmationPage.jsx';
 import TrackReportPage from './pages/public/TrackReportPage.jsx';
 import SafetyPage from './pages/public/SafetyPage.jsx';
+import AboutPage from './pages/public/AboutPage.jsx';
 import LoginPage from './pages/public/LoginPage.jsx';
 import RegisterPage from './pages/public/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
@@ -25,6 +26,7 @@ import MatchesPage from './pages/staff/MatchesPage.jsx';
 import MatchDetailPage from './pages/staff/MatchDetailPage.jsx';
 import UsersPage from './pages/staff/admin/UsersPage.jsx';
 import OfficersPage from './pages/staff/admin/OfficersPage.jsx';
+import SettingsPage from './pages/staff/SettingsPage.jsx';
 import NotFoundPage from './pages/public/NotFoundPage.jsx';
 
 const DevComponentsPage = import.meta.env.DEV
@@ -42,6 +44,8 @@ function App() {
       <Route path="/report/confirmation/:referenceNo" element={<ReportConfirmationPage />} />
       <Route path="/track" element={<TrackReportPage />} />
       <Route path="/safety" element={<SafetyPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/faq" element={<Navigate to="/safety" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -58,6 +62,7 @@ function App() {
       <Route path="/staff/matches/:matchId" element={<RequireRole allowedRoles={['officer', 'admin']}><MatchDetailPage /></RequireRole>} />
       <Route path="/staff/admin/users" element={<RequireRole allowedRoles={['admin']}><UsersPage /></RequireRole>} />
       <Route path="/staff/admin/officers" element={<RequireRole allowedRoles={['admin']}><OfficersPage /></RequireRole>} />
+      <Route path="/staff/settings" element={<RequireRole allowedRoles={['officer', 'admin']}><SettingsPage /></RequireRole>} />
 
       {import.meta.env.DEV && DevComponentsPage && (
         <Route

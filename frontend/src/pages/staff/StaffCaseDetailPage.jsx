@@ -63,11 +63,11 @@ export default function StaffCaseDetailPage() {
       try {
         const [caseData, officersData] = await Promise.all([
           getCaseDetail(caseId),
-          listOfficers().catch(() => []),
+          listOfficers().catch(() => ({ items: [] })),
         ]);
         if (!ignore) {
           setCaseItem(caseData);
-          setOfficers(officersData);
+          setOfficers(officersData.items);
           setSelectedOfficerId(caseData.assignedOfficer?.officerId || '');
           setLoading(false);
         }

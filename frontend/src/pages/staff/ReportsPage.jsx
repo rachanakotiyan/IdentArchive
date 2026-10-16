@@ -37,8 +37,8 @@ export default function ReportsPage() {
   useEffect(() => {
     let isMounted = true;
     listOfficers()
-      .then((data) => {
-        if (isMounted) setOfficers(data);
+      .then(({ items }) => {
+        if (isMounted) setOfficers(items);
       })
       .catch(() => {});
     return () => {

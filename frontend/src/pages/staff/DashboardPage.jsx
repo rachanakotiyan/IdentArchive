@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -40,28 +40,36 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setReloadKey((key) => key + 1);
+  }, []);
 
   useEffect(() => {
-    let ignore = false;
+    let active = true;
     async function fetchDashboard() {
       try {
         const data = await getDashboard();
-        if (!ignore) {
+        if (active) {
           setDashboardData(data);
-          setLoading(false);
+          setError(null);
         }
       } catch (err) {
-        if (!ignore) {
+        if (active) {
           setError(err instanceof Error ? err.message : 'Failed to load dashboard data.');
-          setLoading(false);
         }
+      } finally {
+        if (active) setLoading(false);
       }
     }
     fetchDashboard();
     return () => {
-      ignore = true;
+      active = false;
     };
-  }, [user]);
+  }, [reloadKey, user]);
 
   const queueItems = dashboardData?.actionQueue || [];
 
