@@ -45,6 +45,36 @@ export function StaffLayout({ children }) {
     }
   };
 
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [systemNoticeDismissed, setSystemNoticeDismissed] = useState(false);
+
+  const mockNotifications = [
+    {
+      id: 'notif-1',
+      type: 'report_assigned',
+      title: 'Report Assigned',
+      desc: 'Report REF-20260920-001 assigned to Inspector Rajan Verma.',
+      time: '10m ago',
+      to: '/staff/reports/rep-002',
+    },
+    {
+      id: 'notif-2',
+      type: 'info_provided',
+      title: 'Information Provided',
+      desc: 'Additional details submitted for REF-20260922-001.',
+      time: '45m ago',
+      to: '/staff/reports/rep-003',
+    },
+    {
+      id: 'notif-3',
+      type: 'match_pending',
+      title: 'Potential Match Pending',
+      desc: 'High confidence match (91%) pending review.',
+      time: '2h ago',
+      to: '/staff/matches/match-001',
+    },
+  ];
+
   return (
     <div className="staff-layout">
       <header className="staff-header">
@@ -56,9 +86,45 @@ export function StaffLayout({ children }) {
         </div>
 
         <div className="staff-header__right">
-          <button type="button" className="staff-icon-btn" aria-label="Notifications">
-            <Bell size={16} />
-          </button>
+          {/* Notifications Bell */}
+          <div className="staff-notifications-menu">
+            <button
+              type="button"
+              className="staff-icon-btn staff-bell-btn"
+              aria-label="Notifications"
+              aria-expanded={notificationsOpen}
+              onClick={() => {
+                setNotificationsOpen(o => !o);
+                setAccountOpen(false);
+              }}
+            >
+              <Bell size={16} />
+              <span className="staff-bell-badge" aria-hidden="true">{mockNotifications.length}</span>
+            </button>
+            {notificationsOpen && (
+              <div className="staff-notifications-dropdown" role="region" aria-label="Recent notifications">
+                <div className="staff-notifications-header">
+                  <strong>Notifications</strong>
+                  <span className="staff-notifications-count">{mockNotifications.length} recent</span>
+                </div>
+                <div className="staff-notifications-list">
+                  {mockNotifications.map(n => (
+                    <Link
+                      key={n.id}
+                      to={n.to}
+                      className="staff-notification-item"
+                      onClick={() => setNotificationsOpen(false)}
+                    >
+                      <div className="staff-notification-item__title">{n.title}</div>
+                      <div className="staff-notification-item__desc">{n.desc}</div>
+                      <div className="staff-notification-item__time">{n.time}</div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button type="button" className="staff-icon-btn" aria-label="Toggle theme" onClick={toggleTheme}>
             {effectiveTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -68,7 +134,10 @@ export function StaffLayout({ children }) {
               className="staff-account-btn"
               aria-expanded={accountOpen}
               aria-haspopup="menu"
-              onClick={() => setAccountOpen((open) => !open)}
+              onClick={() => {
+                setAccountOpen((open) => !open);
+                setNotificationsOpen(false);
+              }}
             >
               <UserCircle2 size={18} />
               <span>{user?.name || 'Staff'}</span>
@@ -110,7 +179,28 @@ export function StaffLayout({ children }) {
           <Menu size={18} />
         </button>
 
-        <main className="staff-main">{children}</main>
+        <main className="staff-main">
+          {/* Top-of-page System Notices Banner Area */}
+          {!systemNoticeDismissed && (
+            <div className="staff-system-notice-bar" role="region" aria-label="System Notice">
+              <div className="staff-system-notice-content">
+                <span className="staff-system-notice-tag">NOTICE</span>
+                <span className="staff-system-notice-text">
+                  Scheduled platform database synchronization tonight at 02:00 IST. Emergency helplines (112, 1098, 181, 1930) remain permanently active.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="staff-system-notice-dismiss"
+                onClick={() => setSystemNoticeDismissed(true)}
+                aria-label="Dismiss system notice"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
 
       <div className={`staff-drawer-overlay ${drawerOpen ? 'staff-drawer-overlay--open' : ''}`} onClick={() => setDrawerOpen(false)} />

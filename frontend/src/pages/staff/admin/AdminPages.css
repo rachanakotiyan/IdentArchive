@@ -1,0 +1,112 @@
+.admin-directory-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-6) var(--sp-12);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.admin-directory-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.admin-directory-page__title-wrap h1 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 var(--sp-1);
+}
+
+.admin-directory-page__subtitle {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin: 0;
+}
+
+.admin-search-bar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.admin-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.admin-table th {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: var(--sp-3) var(--sp-4);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* ── Mobile Stacked Cards ────────────────────────────────── */
+.admin-mobile-cards {
+  display: none;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.admin-card-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+@media (max-width: 768px) {
+  .admin-directory-page {
+    padding: var(--sp-3) var(--sp-3) var(--sp-8);
+  }
+
+  .admin-table-desktop {
+    display: none;
+  }
+
+  .admin-mobile-cards {
+    display: flex;
+  }
+}

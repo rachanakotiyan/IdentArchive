@@ -342,13 +342,19 @@ export async function listCases(filters = {}, page = 1, pageSize = 10) {
     const user = assertStaff();
     let results = visibleCases(user);
 
-    if (filters.caseStatus) results = results.filter(c => c.caseStatus === filters.caseStatus);
-    if (filters.kind)       results = results.filter(c => c.kind === filters.kind);
+    if (filters.caseStatus && filters.caseStatus !== 'all') {
+      results = results.filter(c => c.caseStatus === filters.caseStatus);
+    }
+    if (filters.kind && filters.kind !== 'all') {
+      results = results.filter(c => c.kind === filters.kind);
+    }
     if (filters.query) {
-      const q = filters.query.toLowerCase();
+      const q = filters.query.toLowerCase().trim();
       results = results.filter(c =>
         c.caseNumber.toLowerCase().includes(q) ||
-        (c.personName && c.personName.toLowerCase().includes(q))
+        (c.personName && c.personName.toLowerCase().includes(q)) ||
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.city && c.city.toLowerCase().includes(q))
       );
     }
 
@@ -363,29 +369,102 @@ export async function getCaseDetail(id) {
   return withLatency(() => {
     const user = assertStaff();
     const visible = visibleCases(user);
-    const c = visible.find(c => c.caseId === id);
+    const c = visible.find(c => c.caseId === id || c.caseNumber === id);
     if (!c) throw new Error('Case not found or access denied.');
+
+    c.internalNotes = c.internalNotes || [
+      { id: 'note-01', author: 'Inspector Rajan Verma', note: 'Case file reviewed and cross-referenced with regional registry.', date: '2026-09-21T10:00:00Z' }
+    ];
+
+    if (!c.assignedOfficer) {
+      // Find officer from report or default
+      const report = MOCK_REPORTS.find(r => r.caseId === c.caseId);
+      c.assignedOfficer = report?.assignedOfficer || { officerId: 'off-001', name: 'Inspector Rajan Verma' };
+    }
+
+    // Attach matches linked to this case
+    const matches = MOCK_MATCHES.filter(m =>
+      m.missing?.caseId === c.caseId ||
+      m.missing?.caseNumber === c.caseNumber ||
+      m.found?.caseId === c.caseId ||
+      m.found?.caseNumber === c.caseNumber
+    );
+
+    return { ...c, matches };
+  });
+}
+
+export async function addCaseNote(id, note) {
+  return withLatency(() => {
+    const user = assertStaff();
+    const c = MOCK_CASES.find(c => c.caseId === id || c.caseNumber === id);
+    if (!c) throw new Error('Case not found.');
+    c.internalNotes = c.internalNotes || [];
+    const newNote = {
+      id: `note-${Date.now()}`,
+      author: user.name || 'Staff Officer',
+      note,
+      date: new Date().toISOString(),
+    };
+    c.internalNotes.unshift(newNote);
+    return c;
+  });
+}
+
+export async function assignCaseOfficer(caseId, officerId) {
+  return withLatency(() => {
+    const user = assertStaff();
+    const c = MOCK_CASES.find(c => c.caseId === caseId || c.caseNumber === caseId);
+    if (!c) throw new Error('Case not found.');
+    const officer = MOCK_OFFICERS.find(o => o.officerId === officerId);
+    if (!officer) throw new Error('Officer not found.');
+
+    c.assignedOfficer = { officerId: officer.officerId, name: officer.name };
+    c.updates = c.updates || [];
+    c.updates.push({
+      date: new Date().toISOString().slice(0, 10),
+      note: `Assigned to ${officer.name} by ${user.name}.`,
+    });
     return c;
   });
 }
 
 export async function closeCase(id, note) {
   return withLatency(() => {
-    assertStaff();
-    const c = MOCK_CASES.find(c => c.caseId === id);
+    const user = assertStaff();
+    const c = MOCK_CASES.find(c => c.caseId === id || c.caseNumber === id);
     if (!c) throw new Error('Case not found.');
     c.caseStatus = 'closed';
-    if (note) c.updates.push({ date: new Date().toISOString().slice(0, 10), note });
+    c.updates = c.updates || [];
+    c.updates.push({
+      date: new Date().toISOString().slice(0, 10),
+      note: `Case closed by ${user.name}. Reason: ${note}`,
+    });
     return c;
   });
 }
 
-export async function listMatches(filters = {}) {
+export async function listMatches(filters = {}, page = 1, pageSize = 10) {
   return withLatency(() => {
     assertStaff();
     let results = [...MOCK_MATCHES];
-    if (filters.status) results = results.filter(m => m.status === filters.status);
-    return { items: results, total: results.length };
+    if (filters.status && filters.status !== 'all') {
+      results = results.filter(m => m.status === filters.status);
+    }
+    if (filters.query) {
+      const q = filters.query.toLowerCase().trim();
+      results = results.filter(m =>
+        m.matchId.toLowerCase().includes(q) ||
+        (m.missing?.personName && m.missing.personName.toLowerCase().includes(q)) ||
+        (m.missing?.caseNumber && m.missing.caseNumber.toLowerCase().includes(q)) ||
+        (m.found?.caseNumber && m.found.caseNumber.toLowerCase().includes(q)) ||
+        (m.found?.city && m.found.city.toLowerCase().includes(q))
+      );
+    }
+    const total = results.length;
+    const start = (page - 1) * pageSize;
+    const items = results.slice(start, start + pageSize);
+    return { items, total, page, pageSize };
   });
 }
 
@@ -404,28 +483,78 @@ export async function reviewMatch(id, { decision, remarks }) {
     const user = getCurrentUser();
     const m = MOCK_MATCHES.find(m => m.matchId === id);
     if (!m) throw new Error('Match not found.');
+
     m.status = decision; // 'confirmed' or 'dismissed'
-    m.verifications.push({
+    m.verifications = m.verifications || [];
+    m.verifications.unshift({
       officerName: user.name,
       decision,
       remarks,
       verificationDate: new Date().toISOString(),
     });
+
+    // Requirement 3: Confirming updates both persons' statuses in the mock
+    if (decision === 'confirmed') {
+      const missingCase = MOCK_CASES.find(c => c.caseId === m.missing?.caseId || c.caseNumber === m.missing?.caseNumber);
+      if (missingCase) {
+        missingCase.caseStatus = 'resolved';
+        missingCase.updates = missingCase.updates || [];
+        missingCase.updates.push({
+          date: new Date().toISOString().slice(0, 10),
+          note: `Match ${m.matchId} confirmed. Linked with ${m.found?.caseNumber || 'found record'}. Case status resolved.`
+        });
+      }
+      const foundCase = MOCK_CASES.find(c => c.caseId === m.found?.caseId || c.caseNumber === m.found?.caseNumber);
+      if (foundCase) {
+        foundCase.caseStatus = 'resolved';
+        foundCase.updates = foundCase.updates || [];
+        foundCase.updates.push({
+          date: new Date().toISOString().slice(0, 10),
+          note: `Match ${m.matchId} confirmed. Linked with ${m.missing?.caseNumber || 'missing record'}. Case status resolved.`
+        });
+      }
+    }
+
     return m;
   });
 }
 
-export async function listOfficers() {
+export async function listOfficers(filters = {}, page = 1, pageSize = 10) {
   return withLatency(() => {
     assertStaff();
-    return MOCK_OFFICERS;
+    let results = [...MOCK_OFFICERS];
+    if (filters.query) {
+      const q = filters.query.toLowerCase().trim();
+      results = results.filter(o =>
+        o.name.toLowerCase().includes(q) ||
+        o.badge.toLowerCase().includes(q) ||
+        o.district.toLowerCase().includes(q)
+      );
+    }
+    const total = results.length;
+    const start = (page - 1) * pageSize;
+    const items = results.slice(start, start + pageSize);
+    return { items, total, page, pageSize };
   });
 }
 
-export async function listUsers() {
+export async function listUsers(filters = {}, page = 1, pageSize = 10) {
   return withLatency(() => {
     const user = assertStaff();
     if (user.role !== 'admin') throw new Error('Admin access required.');
-    return MOCK_USERS.map(({ password: _pw, ...safe }) => safe);
+    let results = MOCK_USERS.map(({ password: _pw, ...safe }) => safe);
+    if (filters.query) {
+      const q = filters.query.toLowerCase().trim();
+      results = results.filter(u =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.phone && u.phone.includes(q)) ||
+        u.role.toLowerCase().includes(q)
+      );
+    }
+    const total = results.length;
+    const start = (page - 1) * pageSize;
+    const items = results.slice(start, start + pageSize);
+    return { items, total, page, pageSize };
   });
 }
