@@ -92,6 +92,9 @@ export function PublicLayout({ children }) {
                       {user.role === 'individual' && (
                         <Link role="menuitem" to="/my-reports" onClick={() => setAccountOpen(false)}>My reports</Link>
                       )}
+                      {(user.role === 'officer' || user.role === 'admin') && (
+                        <Link role="menuitem" to="/staff" onClick={() => setAccountOpen(false)}>Staff dashboard</Link>
+                      )}
                       <Link role="menuitem" to="/track" onClick={() => setAccountOpen(false)}>Track report</Link>
                       <button role="menuitem" type="button" onClick={handleLogout}>Log out</button>
                     </div>
@@ -184,6 +187,9 @@ export function PublicLayout({ children }) {
             </div>
             {user.role === 'individual' && (
               <Link to="/my-reports" className="pub-nav-link" onClick={() => setDrawerOpen(false)}>My reports</Link>
+            )}
+            {(user.role === 'officer' || user.role === 'admin') && (
+              <Link to="/staff" className="pub-nav-link" onClick={() => setDrawerOpen(false)}>Staff dashboard</Link>
             )}
             <button type="button" className="pub-nav-link" onClick={() => { setDrawerOpen(false); handleLogout(); }}>Log out</button>
           </>

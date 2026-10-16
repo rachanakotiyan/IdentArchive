@@ -41,7 +41,7 @@ const SAFETY_TIPS = [
   },
   {
     title: 'Look after your own wellbeing',
-    body: 'The period of uncertainty is extremely stressful. Where possible, ensure someone is with you. Use the helplines below if you need emotional support — your ability to assist the investigation depends on your own stability.',
+    body: 'The period of uncertainty is extremely stressful. Where possible, ensure someone is with you. Use the helplines below if you need emotional support - your ability to assist the investigation depends on your own stability.',
   },
   {
     title: 'Reporting a found person',
@@ -107,11 +107,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'My report status says "Information Requested." What does that mean?',
-    a: 'An officer has reviewed your submission and needs additional details before the report can be formally approved. Check the email address you registered with — an officer will have sent guidance on what is required. You can also call the helpline on 112 for assistance.',
+    a: 'An officer has reviewed your submission and needs additional details before the report can be formally approved. Check the email address you registered with - an officer will have sent guidance on what is required. You can also call the helpline on 112 for assistance.',
   },
   {
     q: 'Can I check the status of my report without logging in?',
-    a: 'Yes. Go to the Track Report page. Enter the reference number issued when you submitted your report, and the email address you used to register. You do not need to log in. Note that the tracking page shows only a status — it does not show internal review notes.',
+    a: 'Yes. Go to the Track Report page. Enter the reference number issued when you submitted your report, and the email address you used to register. You do not need to log in. Note that the tracking page shows only a status - it does not show internal review notes.',
   },
   {
     q: 'What happens when a potential match is found?',
@@ -123,7 +123,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How do I withdraw a report if the person has been found?',
-    a: 'Log in and go to your My Reports page. Select the relevant report and use the Update Status option to indicate the person has been found. You may also contact the assigned officer directly — their details are available in the report view. The case will be reviewed and closed by an officer.',
+    a: 'Log in and go to your My Reports page. Select the relevant report and use the Update Status option to indicate the person has been found. You may also contact the assigned officer directly - their details are available in the report view. The case will be reviewed and closed by an officer.',
   },
   {
     q: 'Is this system available in my language?',
@@ -181,7 +181,7 @@ export default function SafetyPage() {
           </p>
         </div>
 
-        {/* Immediate steps — urgent callout */}
+        {/* Immediate steps - urgent callout */}
         <section aria-labelledby="immediate-heading">
           <h2 id="immediate-heading" className="safety-section__title">
             If someone is missing right now
@@ -279,7 +279,7 @@ export default function SafetyPage() {
               Privacy and data use
             </h2>
             <p className="safety-privacy__body">
-              Personal information you submit — including your name, email address and phone number —
+              Personal information you submit - including your name, email address and phone number -
               is stored only for case management purposes. It is visible only to the officer
               assigned to your report and to administrators. It is never displayed on public
               case listings, search results, or any other public page.

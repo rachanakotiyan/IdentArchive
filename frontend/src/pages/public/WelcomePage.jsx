@@ -18,7 +18,7 @@ const POINTS = [
   },
   {
     title: 'Track your case',
-    body: 'Use your reference number and email at any time to check the status of your report — no phone calls required.',
+    body: 'Use your reference number and email at any time to check the status of your report - no phone calls required.',
   },
 ];
 
@@ -27,7 +27,7 @@ export default function WelcomePage() {
   const { effectiveTheme, toggleTheme } = useTheme();
 
   useEffect(() => {
-    document.title = 'IdentArchive — Every detail on record.';
+    document.title = 'IdentArchive - Every detail on record.';
   }, []);
 
   // Logged-in users skip the welcome screen
@@ -37,7 +37,7 @@ export default function WelcomePage() {
     <div className="welcome-page">
       {/* Demo mode notice */}
       <div className="welcome-page__demo-bar" role="status">
-        DEMO MODE — This is a mock system. No data submitted here is real.
+        DEMO MODE - This is a mock system. No data submitted here is real.
       </div>
 
       {/* Theme toggle (floating) */}

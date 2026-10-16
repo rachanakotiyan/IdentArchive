@@ -134,7 +134,7 @@ export default function UsersPage() {
                         {u.email}
                       </td>
                       <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
-                        {u.phone || '—'}
+                        {u.phone || '-'}
                       </td>
                       <td>
                         <span

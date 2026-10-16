@@ -8,7 +8,7 @@ import './InternalPanel.css';
  */
 export default function InternalPanel({ children, className = '' }) {
   return (
-    <div className={`internal-panel ${className}`} aria-label="Internal — staff only">
+    <div className={`internal-panel ${className}`} aria-label="Internal - staff only">
       <div className="internal-panel__header" aria-hidden="true">
         <Lock size={12} className="internal-panel__icon" strokeWidth={2} />
         Internal only

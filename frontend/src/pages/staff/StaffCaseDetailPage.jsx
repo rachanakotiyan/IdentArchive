@@ -227,7 +227,7 @@ export default function StaffCaseDetailPage() {
         <div className="fact-item">
           <span className="fact-item__label">Location</span>
           <span className="fact-item__value">
-            {caseItem.city ? `${caseItem.city}, ${caseItem.district || caseItem.state}` : '—'}
+            {caseItem.city ? `${caseItem.city}, ${caseItem.district || caseItem.state}` : '-'}
           </span>
         </div>
       </div>
@@ -605,7 +605,7 @@ export default function StaffCaseDetailPage() {
                 <option value="">Select an officer...</option>
                 {officers.map((o) => (
                   <option key={o.officerId} value={o.officerId}>
-                    {o.name} ({o.badge} — {o.district})
+                    {o.name} ({o.badge} - {o.district})
                   </option>
                 ))}
               </select>

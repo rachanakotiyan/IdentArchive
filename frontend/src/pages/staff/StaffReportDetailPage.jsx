@@ -395,20 +395,20 @@ export default function StaffReportDetailPage() {
                   </div>
                   <div className="fact-item">
                     <span className="fact-item__label">City</span>
-                    <span className="fact-item__value">{location.city || '—'}</span>
+                    <span className="fact-item__value">{location.city || '-'}</span>
                   </div>
                   <div className="fact-item">
                     <span className="fact-item__label">District</span>
-                    <span className="fact-item__value">{location.district || '—'}</span>
+                    <span className="fact-item__value">{location.district || '-'}</span>
                   </div>
                   <div className="fact-item">
                     <span className="fact-item__label">State</span>
-                    <span className="fact-item__value">{location.state || '—'}</span>
+                    <span className="fact-item__value">{location.state || '-'}</span>
                   </div>
                   <div className="fact-item">
                     <span className="fact-item__label">Pincode</span>
                     <span className="fact-item__value" style={{ fontFamily: 'var(--font-mono)' }}>
-                      {location.pincode || '—'}
+                      {location.pincode || '-'}
                     </span>
                   </div>
                 </div>

@@ -4,7 +4,7 @@ import './Logo.css';
 /**
  * Logo
  * Monogram badge + optional wordmark.
- * Uses currentColor / tokens — works in both themes.
+ * Uses currentColor / tokens - works in both themes.
  *
  * @param {number}  size         - badge size in px (default 32)
  * @param {boolean} showWordmark - whether to show "IdentArchive" text
@@ -59,7 +59,7 @@ export default function Logo({ size = 32, showWordmark = true, to = '/', as: Tag
   }
 
   return (
-    <Link to={to} className="logo" aria-label="IdentArchive — home">
+    <Link to={to} className="logo" aria-label="IdentArchive - home">
       {badge}
     </Link>
   );

@@ -8,7 +8,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-001',
     caseNumber: 'IA-2026-0001',
-    title: 'Missing child — Arjun Kumar',
+    title: 'Missing child - Arjun Kumar',
     crimeType: 'missing_person',
     caseStatus: 'open',
     kind: 'missing',
@@ -34,7 +34,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-002',
     caseNumber: 'IA-2026-0002',
-    title: 'Unidentified person — Dadar bridge area',
+    title: 'Unidentified person - Dadar bridge area',
     crimeType: 'unidentified_person',
     caseStatus: 'open',
     kind: 'found',
@@ -58,7 +58,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-003',
     caseNumber: 'IA-2026-0003',
-    title: 'Missing teenager — Sneha Patil',
+    title: 'Missing teenager - Sneha Patil',
     crimeType: 'runaway',
     caseStatus: 'under_review',
     kind: 'missing',
@@ -83,7 +83,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-004',
     caseNumber: 'IA-2026-0004',
-    title: 'Abduction suspected — Mohammed Salim',
+    title: 'Abduction suspected - Mohammed Salim',
     crimeType: 'abduction',
     caseStatus: 'under_review',
     kind: 'missing',
@@ -108,7 +108,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-005',
     caseNumber: 'IA-2026-0005',
-    title: 'Missing elderly woman — Kamala Devi',
+    title: 'Missing elderly woman - Kamala Devi',
     crimeType: 'missing_person',
     caseStatus: 'resolved',
     kind: 'missing',
@@ -134,7 +134,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-006',
     caseNumber: 'IA-2026-0006',
-    title: 'Missing child — Aisha Begum',
+    title: 'Missing child - Aisha Begum',
     crimeType: 'missing_person',
     caseStatus: 'open',
     kind: 'missing',
@@ -158,7 +158,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-007',
     caseNumber: 'IA-2026-0007',
-    title: 'Unidentified woman — Chennai highway',
+    title: 'Unidentified woman - Chennai highway',
     crimeType: 'unidentified_person',
     caseStatus: 'open',
     kind: 'found',
@@ -182,7 +182,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-008',
     caseNumber: 'IA-2026-0008',
-    title: 'Suspected trafficking — Rina Das',
+    title: 'Suspected trafficking - Rina Das',
     crimeType: 'trafficking',
     caseStatus: 'under_review',
     kind: 'missing',
@@ -207,7 +207,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-009',
     caseNumber: 'IA-2026-0009',
-    title: 'Missing adult — Vikram Singh',
+    title: 'Missing adult - Vikram Singh',
     crimeType: 'missing_person',
     caseStatus: 'open',
     kind: 'missing',
@@ -231,7 +231,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-010',
     caseNumber: 'IA-2026-0010',
-    title: 'Found child — unidentified boy',
+    title: 'Found child - unidentified boy',
     crimeType: 'unidentified_person',
     caseStatus: 'open',
     kind: 'found',
@@ -255,7 +255,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-011',
     caseNumber: 'IA-2026-0011',
-    title: 'Missing adult — Deepa Nair',
+    title: 'Missing adult - Deepa Nair',
     crimeType: 'domestic_violence',
     caseStatus: 'resolved',
     kind: 'missing',
@@ -280,7 +280,7 @@ export const MOCK_CASES = [
   {
     caseId: 'case-012',
     caseNumber: 'IA-2026-0012',
-    title: 'Missing youth — Rahul Joshi',
+    title: 'Missing youth - Rahul Joshi',
     crimeType: 'runaway',
     caseStatus: 'closed',
     kind: 'missing',

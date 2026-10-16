@@ -155,12 +155,12 @@ export default function MatchDetailPage() {
         <Link to={`/staff/cases/${missing.caseId || missing.caseNumber}`} style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
           {missing.caseNumber}
         </Link>
-      ) : '—',
+      ) : '-',
       found: found.caseNumber ? (
         <Link to={`/staff/cases/${found.caseId || found.caseNumber}`} style={{ color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
           {found.caseNumber}
         </Link>
-      ) : '—',
+      ) : '-',
       type: 'neutral',
       verdict: 'Linked records',
     },
@@ -215,8 +215,8 @@ export default function MatchDetailPage() {
     },
     {
       field: 'Recorded Date',
-      missing: missing.date || '—',
-      found: found.date || '—',
+      missing: missing.date || '-',
+      found: found.date || '-',
       type: 'neutral',
       verdict: 'Chronological timeline compatible',
     },

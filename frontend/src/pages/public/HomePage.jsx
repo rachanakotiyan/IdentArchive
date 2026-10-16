@@ -80,9 +80,9 @@ const RESOLVED_STORIES = [
 ];
 
 const EMERGENCY_CONTACTS = [
-  { number: '112', service: 'National Emergency Helpline', notes: 'Police, ambulance, fire — 24/7' },
-  { number: '1098', service: 'Childline', notes: 'For children in distress — 24/7' },
-  { number: '181', service: 'Women Helpline', notes: 'Distress and violence support — 24/7' },
+  { number: '112', service: 'National Emergency Helpline', notes: 'Police, ambulance, fire - 24/7' },
+  { number: '1098', service: 'Childline', notes: 'For children in distress - 24/7' },
+  { number: '181', service: 'Women Helpline', notes: 'Distress and violence support - 24/7' },
   { number: '1930', service: 'Cybercrime Helpline', notes: 'Report online crimes' },
   { number: '100', service: 'Police', notes: 'Direct to local police control room' },
 ];
@@ -98,7 +98,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Can I report a found person who is unable to identify themselves?',
-    a: 'Yes. Select "Found person" when starting your report. You do not need to know the person\'s name or any details — describe what you can observe and where you found them.',
+    a: 'Yes. Select "Found person" when starting your report. You do not need to know the person\'s name or any details - describe what you can observe and where you found them.',
   },
   {
     q: 'What happens to my personal information?',
@@ -106,7 +106,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Will I be notified when the status of my report changes?',
-    a: 'Officers leave notes when requesting more information or approving a report. You can check the status at any time using the Track Report page — no account login is needed if you have your reference number and registered email.',
+    a: 'Officers leave notes when requesting more information or approving a report. You can check the status at any time using the Track Report page - no account login is needed if you have your reference number and registered email.',
   },
   {
     q: 'What if I have information about a case but am not the reporter?',
@@ -120,7 +120,7 @@ function StatItem({ value, label, loading }) {
     <div className="home-stats__item">
       {loading
         ? <div className="home-stats__skeleton" aria-hidden="true" />
-        : <div className="home-stats__value">{value ?? '—'}</div>
+        : <div className="home-stats__value">{value ?? '-'}</div>
       }
       <div className="home-stats__label">{label}</div>
     </div>
@@ -202,7 +202,7 @@ export default function HomePage() {
           </h1>
           <p className="home-hero__sub">
             IdentArchive helps families, found-person reporters, and officers record,
-            match and resolve missing and unidentified person cases — carefully and privately.
+            match and resolve missing and unidentified person cases - carefully and privately.
           </p>
 
           <div className="home-search">

@@ -247,7 +247,7 @@ export default function CasesPage() {
                         <StatusStamp kind="case" status={c.caseStatus} />
                       </td>
                       <td style={{ fontSize: 'var(--text-xs)' }}>
-                        {c.city ? `${c.city}, ${c.state}` : '—'}
+                        {c.city ? `${c.city}, ${c.state}` : '-'}
                       </td>
                       <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
                         {c.date}
@@ -290,7 +290,7 @@ export default function CasesPage() {
                     </div>
                     <div>
                       <span style={{ color: 'var(--muted)', textTransform: 'uppercase', fontSize: '10px', display: 'block' }}>Location</span>
-                      <span>{c.city || '—'}</span>
+                      <span>{c.city || '-'}</span>
                     </div>
                     <div>
                       <span style={{ color: 'var(--muted)', textTransform: 'uppercase', fontSize: '10px', display: 'block' }}>Date</span>

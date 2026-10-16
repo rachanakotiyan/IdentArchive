@@ -239,7 +239,7 @@ export async function decideReport(id, { action, note }) {
         const newCase = {
           caseId,
           caseNumber,
-          title: `${r.reportType === 'missing' ? 'Missing person' : 'Unidentified person'} — ${r.person?.name || r.location?.city || 'Record'}`,
+          title: `${r.reportType === 'missing' ? 'Missing person' : 'Unidentified person'} - ${r.person?.name || r.location?.city || 'Record'}`,
           crimeType: r.reportType === 'missing' ? 'missing_person' : 'unidentified_person',
           caseStatus: 'open',
           kind: r.reportType,

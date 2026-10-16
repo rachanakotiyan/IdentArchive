@@ -1,6 +1,6 @@
 /**
  * Mock user accounts.
- * DEMO ONLY — never store real credentials here.
+ * DEMO ONLY - never store real credentials here.
  */
 
 export const MOCK_USERS = [
