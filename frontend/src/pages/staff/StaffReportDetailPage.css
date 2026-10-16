@@ -1,0 +1,435 @@
+.report-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-6) var(--sp-12);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.report-detail-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.report-detail-page__back:hover {
+  color: var(--ink);
+}
+
+.report-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--sp-6);
+  align-items: flex-start;
+}
+
+/* ── Main Dossier Column ─────────────────────────────────── */
+.report-dossier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.dossier-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.dossier-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.dossier-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dossier-header__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.dossier-type-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.dossier-type-tag--missing {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.dossier-type-tag--found {
+  background: var(--success-subtle);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.dossier-ref {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.dossier-date-meta {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+/* ── Linked Public Case Banner ──────────────────────────── */
+.linked-case-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--success-subtle);
+  border: 1px solid var(--success);
+  color: var(--ink);
+}
+
+.linked-case-banner__left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.linked-case-banner__ref {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--success);
+}
+
+/* ── Narrative Description ──────────────────────────────── */
+.dossier-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.dossier-section__title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.dossier-narrative {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  white-space: pre-wrap;
+}
+
+/* ── Key Facts Grid ─────────────────────────────────────── */
+.facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-4);
+}
+
+.fact-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.fact-item__label {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fact-item__value {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── History List ───────────────────────────────────────── */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: var(--sp-4);
+}
+
+.history-timeline::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 5px;
+  width: 2px;
+  background: var(--line);
+}
+
+.history-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--sp-4);
+}
+
+.history-item:last-child {
+  padding-bottom: 0;
+}
+
+.history-item__dot {
+  position: absolute;
+  left: -15px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+}
+
+.history-item__event {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.history-item__date {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+/* ── Sidebar Actions & Internal Panel ───────────────────── */
+.report-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.actions-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.actions-card__title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.action-buttons-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.action-buttons-stack .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.assignment-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+}
+
+.assignment-block label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.assignment-select-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.assignment-select {
+  flex: 1;
+  height: 36px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+
+.priority-select-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.priority-select {
+  flex: 1;
+  height: 36px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+
+/* ── Reporter Details inside InternalPanel ──────────────── */
+.reporter-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+.reporter-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reporter-info-label {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.reporter-info-val {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.reporter-info-val--mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Modals Styling ─────────────────────────────────────── */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  resize: vertical;
+}
+
+.modal-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.modal-textarea--error {
+  border-color: var(--danger);
+}
+
+.modal-error-text {
+  font-size: var(--text-xs);
+  color: var(--danger);
+  margin-top: var(--sp-1);
+}
+
+/* ── Responsive down to 360px ───────────────────────────── */
+@media (max-width: 900px) {
+  .report-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .report-detail-page {
+    padding: var(--sp-3) var(--sp-3) var(--sp-8);
+  }
+
+  .dossier-card {
+    padding: var(--sp-4);
+  }
+
+  .dossier-ref {
+    font-size: var(--text-xl);
+  }
+
+  .facts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .action-buttons-stack .btn {
+    min-height: 44px;
+  }
+
+  .assignment-select-row,
+  .priority-select-row {
+    flex-direction: column;
+  }
+
+  .assignment-select-row .btn,
+  .priority-select-row .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
