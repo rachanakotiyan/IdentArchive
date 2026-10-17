@@ -32,6 +32,7 @@ export default function ReportsPage() {
   const [error, setError] = useState(null);
   const [reportsData, setReportsData] = useState({ items: [], total: 0 });
   const [officers, setOfficers] = useState([]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Load officer list for filter dropdown
   useEffect(() => {
@@ -93,7 +94,13 @@ export default function ReportsPage() {
     return () => {
       ignore = true;
     };
-  }, [status, priority, type, assignedOfficer, debouncedQuery, page, pageSize]);
+  }, [status, priority, type, assignedOfficer, debouncedQuery, page, pageSize, reloadKey]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    setReloadKey((key) => key + 1);
+  };
 
   const handleResetFilters = () => {
     setStatus('all');
@@ -254,7 +261,7 @@ export default function ReportsPage() {
             title="Failed to load reports"
             description="We were unable to retrieve the report records at this time."
             error={error}
-            onRetry={fetchReports}
+            onRetry={handleRetry}
           />
         )}
 

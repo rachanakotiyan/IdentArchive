@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { RequireAuth, RequireRole } from './components/guards/RouteGuards.jsx';
 import { PublicLayout } from './components/layout/PublicLayout.jsx';
 import WelcomePage from './pages/public/WelcomePage.jsx';
@@ -11,6 +11,7 @@ import ReportConfirmationPage from './pages/report/ReportConfirmationPage.jsx';
 import TrackReportPage from './pages/public/TrackReportPage.jsx';
 import SafetyPage from './pages/public/SafetyPage.jsx';
 import AboutPage from './pages/public/AboutPage.jsx';
+import FaqPage from './pages/public/FaqPage.jsx';
 import LoginPage from './pages/public/LoginPage.jsx';
 import RegisterPage from './pages/public/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
@@ -45,7 +46,7 @@ function App() {
       <Route path="/track" element={<TrackReportPage />} />
       <Route path="/safety" element={<SafetyPage />} />
       <Route path="/about" element={<AboutPage />} />
-      <Route path="/faq" element={<Navigate to="/safety" replace />} />
+      <Route path="/faq" element={<FaqPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
