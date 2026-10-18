@@ -5,7 +5,7 @@ export default function AuthShell({ title, description, children }) {
   return (
     <main className="auth-shell">
       <div className="auth-shell__brand">
-        <Logo size={36} />
+        <Logo size={44} />
         <span className="auth-shell__mode">Demo mode</span>
       </div>
       <section className="auth-card" aria-labelledby="auth-title">

@@ -55,7 +55,7 @@ export function PublicLayout({ children }) {
 
         <nav className="pub-navbar" aria-label="Main navigation">
           <div className="pub-navbar__inner">
-            <Logo size={30} showWordmark={false} />
+            <Logo size={42} />
 
             <div className="pub-navbar__nav">
               {NAV_ITEMS.map((item) => (
@@ -72,34 +72,36 @@ export function PublicLayout({ children }) {
                   <Link to="/register" className="btn btn--solid btn--sm">Register</Link>
                 </>
               ) : (
-                <div className="pub-account-menu">
-                  <button
-                    type="button"
-                    className="pub-account-btn"
-                    aria-expanded={accountOpen}
-                    aria-haspopup="menu"
-                    onClick={() => setAccountOpen((open) => !open)}
-                  >
-                    <span>{user.name || 'Account'}</span>
-                    <ChevronDown size={14} />
-                  </button>
-                  {accountOpen && (
-                    <div className="pub-account-dropdown" role="menu">
-                      <div className="pub-account-dropdown__identity">
-                        <strong>{user.name || 'Account'}</strong>
-                        <span>{user.role}</span>
-                      </div>
-                      {user.role === 'individual' && (
-                        <Link role="menuitem" to="/my-reports" onClick={() => setAccountOpen(false)}>My reports</Link>
-                      )}
-                      {(user.role === 'officer' || user.role === 'admin') && (
-                        <Link role="menuitem" to="/staff" onClick={() => setAccountOpen(false)}>Staff dashboard</Link>
-                      )}
-                      <Link role="menuitem" to="/track" onClick={() => setAccountOpen(false)}>Track report</Link>
-                      <button role="menuitem" type="button" onClick={handleLogout}>Log out</button>
-                    </div>
+                <>
+                  {(user.role === 'officer' || user.role === 'admin') && (
+                    <Link to="/staff" className="btn btn--outline btn--sm">Staff dashboard</Link>
                   )}
-                </div>
+                  <div className="pub-account-menu">
+                    <button
+                      type="button"
+                      className="pub-account-btn"
+                      aria-expanded={accountOpen}
+                      aria-haspopup="menu"
+                      onClick={() => setAccountOpen((open) => !open)}
+                    >
+                      <span>{user.name || 'Account'}</span>
+                      <ChevronDown size={14} />
+                    </button>
+                    {accountOpen && (
+                      <div className="pub-account-dropdown" role="menu">
+                        <div className="pub-account-dropdown__identity">
+                          <strong>{user.name || 'Account'}</strong>
+                          <span>{user.role}</span>
+                        </div>
+                        {user.role === 'individual' && (
+                          <Link role="menuitem" to="/my-reports" onClick={() => setAccountOpen(false)}>My reports</Link>
+                        )}
+                        <Link role="menuitem" to="/track" onClick={() => setAccountOpen(false)}>Track report</Link>
+                        <button role="menuitem" type="button" onClick={handleLogout}>Log out</button>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 

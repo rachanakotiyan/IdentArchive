@@ -53,7 +53,7 @@ export default function WelcomePage() {
       <div className="welcome-page__card">
         {/* Logo + tagline */}
         <div className="welcome-page__logo-wrap">
-          <Logo size={56} showWordmark as="span" />
+          <Logo size={68} showWordmark as="span" />
           <p className="welcome-page__tagline">Every detail on record.</p>
         </div>
 

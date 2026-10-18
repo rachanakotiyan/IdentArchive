@@ -36,7 +36,7 @@
 .logo__wordmark {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
   letter-spacing: -0.02em;
   color: var(--ink);
 }
