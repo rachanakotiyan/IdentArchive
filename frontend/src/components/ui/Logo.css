@@ -27,6 +27,12 @@
   border: 1.5px solid var(--accent);
 }
 
+.logo__badge--image {
+  object-fit: contain;
+  background: transparent;
+  border: 0;
+}
+
 .logo__wordmark {
   font-family: var(--font-sans);
   font-weight: 700;
