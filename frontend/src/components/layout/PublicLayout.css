@@ -362,6 +362,9 @@
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .pub-navbar__inner {
+    height: 56px;
+  }
   .pub-navbar__nav,
   .pub-navbar__auth {
     display: none;

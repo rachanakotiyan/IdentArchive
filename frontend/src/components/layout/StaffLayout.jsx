@@ -81,7 +81,7 @@ export function StaffLayout({ children }) {
         <div className="staff-header__left">
           <span className="staff-header__mark">STAFF</span>
           <div className="staff-header__brand">
-            <Logo size={36} />
+            <Logo size={42} className="logo--staff" />
           </div>
         </div>
 

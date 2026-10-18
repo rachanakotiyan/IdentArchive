@@ -2,7 +2,7 @@
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: 0.625rem;
   text-decoration: none;
   color: currentColor;
   line-height: 1;
@@ -36,11 +36,89 @@
 .logo__wordmark {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: var(--text-lg);
+  font-size: 1.25rem;
   letter-spacing: -0.02em;
   color: var(--ink);
+  white-space: nowrap;
 }
 
 .logo__wordmark span {
   color: var(--accent);
+}
+
+/* ── Laptop & Desktop Responsive Enhancements ────────────── */
+@media (min-width: 769px) {
+  .logo {
+    gap: 0.75rem;
+  }
+
+  .logo__wordmark {
+    font-size: 1.5rem;
+    letter-spacing: -0.025em;
+  }
+}
+
+/* Specific context scalings */
+.logo--nav .logo__badge {
+  width: 42px;
+  height: 42px;
+}
+
+@media (min-width: 769px) {
+  .logo--nav .logo__badge {
+    width: 52px;
+    height: 52px;
+  }
+
+  .logo--nav .logo__wordmark {
+    font-size: 1.55rem;
+  }
+}
+
+.logo--staff .logo__badge {
+  width: 38px;
+  height: 38px;
+}
+
+@media (min-width: 769px) {
+  .logo--staff .logo__badge {
+    width: 44px;
+    height: 44px;
+  }
+
+  .logo--staff .logo__wordmark {
+    font-size: 1.35rem;
+  }
+}
+
+.logo--auth .logo__badge {
+  width: 46px;
+  height: 46px;
+}
+
+@media (min-width: 769px) {
+  .logo--auth .logo__badge {
+    width: 56px;
+    height: 56px;
+  }
+
+  .logo--auth .logo__wordmark {
+    font-size: 1.65rem;
+  }
+}
+
+.logo--welcome .logo__badge {
+  width: 76px;
+  height: 76px;
+}
+
+@media (min-width: 769px) {
+  .logo--welcome .logo__badge {
+    width: 96px;
+    height: 96px;
+  }
+
+  .logo--welcome .logo__wordmark {
+    font-size: 2.25rem;
+  }
 }

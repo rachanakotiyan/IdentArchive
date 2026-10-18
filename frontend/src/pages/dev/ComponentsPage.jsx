@@ -74,7 +74,7 @@ export default function ComponentsPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 20px 80px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Logo size={36} showWordmark />
+          <Logo size={46} showWordmark />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Button variant="outline" size="sm" onClick={() => triggerToast('info', 'System running normally')}>

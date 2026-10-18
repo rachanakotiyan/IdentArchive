@@ -55,7 +55,7 @@ export function PublicLayout({ children }) {
 
         <nav className="pub-navbar" aria-label="Main navigation">
           <div className="pub-navbar__inner">
-            <Logo size={42} />
+            <Logo size={48} className="logo--nav" />
 
             <div className="pub-navbar__nav">
               {NAV_ITEMS.map((item) => (

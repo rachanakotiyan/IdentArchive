@@ -12,7 +12,7 @@ import './Logo.css';
  * @param {string}  to           - link destination (default '/')
  * @param {string}  as           - 'a' for anchor, 'span' for non-link
  */
-export default function Logo({ size = 32, showWordmark = true, to = '/', as: Tag }) {
+export default function Logo({ size = 44, showWordmark = true, to = '/', as: Tag, className = '' }) {
   const [imageFailed, setImageFailed] = useState(false);
   const fontSize = Math.round(size * 0.45);
   const radius   = Math.round(size * 0.22);
@@ -64,12 +64,14 @@ export default function Logo({ size = 32, showWordmark = true, to = '/', as: Tag
     </>
   );
 
+  const classes = ['logo', className].filter(Boolean).join(' ');
+
   if (Tag === 'span') {
-    return <span className="logo">{badge}</span>;
+    return <span className={classes}>{badge}</span>;
   }
 
   return (
-    <Link to={to} className="logo" aria-label="IdentArchive - home">
+    <Link to={to} className={classes} aria-label="IdentArchive - home">
       {badge}
     </Link>
   );
