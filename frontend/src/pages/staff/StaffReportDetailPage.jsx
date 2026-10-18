@@ -450,7 +450,7 @@ export default function StaffReportDetailPage() {
                   style={{
                     backgroundColor: report.status === 'approved' ? 'var(--surface-2)' : 'var(--success)',
                     borderColor: report.status === 'approved' ? 'var(--line)' : 'var(--success)',
-                    color: report.status === 'approved' ? 'var(--muted)' : '#ffffff',
+                    color: report.status === 'approved' ? 'var(--muted)' : 'var(--on-accent)',
                   }}
                 >
                   <CheckCircle2 size={16} style={{ marginRight: '6px' }} />

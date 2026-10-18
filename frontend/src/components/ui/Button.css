@@ -31,23 +31,25 @@
 
 /* ── Solid (primary) ─────────────────────────────────────── */
 .btn--solid {
-  background: var(--accent);
+  background: var(--accent-action, var(--accent));
   color: var(--on-accent);
-  border-color: var(--accent);
+  border-color: var(--accent-action-border, var(--accent));
 }
 .btn--solid:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--accent-action-hover, var(--accent-hover));
+  border-color: var(--accent-action-border, var(--accent-hover));
 }
 
 /* ── Outline (secondary) ─────────────────────────────────── */
 .btn--outline {
   background: transparent;
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--ink);
+  border-color: var(--line);
 }
 .btn--outline:hover:not(:disabled) {
-  background: var(--accent-subtle);
+  background: var(--surface-2);
+  border-color: var(--muted);
+  color: var(--ink);
 }
 
 /* ── Text (tertiary) ─────────────────────────────────────── */

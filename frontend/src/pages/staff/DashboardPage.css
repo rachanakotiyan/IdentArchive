@@ -82,7 +82,7 @@
   height: 22px;
   padding: 0 var(--sp-2);
   border-radius: var(--radius-full);
-  background: var(--accent);
+  background: var(--accent-action, var(--accent));
   color: var(--on-accent);
   font-size: var(--text-xs);
   font-weight: 700;

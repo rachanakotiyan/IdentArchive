@@ -9,9 +9,11 @@
 
 .card--interactive {
   cursor: pointer;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 .card--interactive:hover {
-  box-shadow: 0 2px 8px var(--shadow-xs);
+  border-color: var(--muted);
+  box-shadow: 0 1px 4px var(--shadow-xs);
 }
 .card--interactive:focus-visible {
   outline: 2px solid var(--accent);
@@ -20,5 +22,5 @@
 
 .card--flush { padding: 0; }
 .card--raised {
-  box-shadow: 0 1px 4px var(--shadow-xs);
+  box-shadow: 0 1px 3px var(--shadow-xs);
 }

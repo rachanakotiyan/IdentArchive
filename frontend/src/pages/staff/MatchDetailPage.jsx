@@ -252,7 +252,7 @@ export default function MatchDetailPage() {
                 style={{
                   backgroundColor: match.status === 'confirmed' ? 'var(--surface-2)' : 'var(--success)',
                   borderColor: match.status === 'confirmed' ? 'var(--line)' : 'var(--success)',
-                  color: match.status === 'confirmed' ? 'var(--muted)' : '#ffffff',
+                  color: match.status === 'confirmed' ? 'var(--muted)' : 'var(--on-accent)',
                 }}
               >
                 <CheckCircle2 size={16} style={{ marginRight: '6px' }} />
@@ -398,7 +398,7 @@ export default function MatchDetailPage() {
               <Button variant="outline" onClick={() => setConfirmModalOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="solid" onClick={handleConfirmMatch} loading={actionLoading} style={{ background: 'var(--success)', borderColor: 'var(--success)', color: '#ffffff' }}>
+              <Button variant="solid" onClick={handleConfirmMatch} loading={actionLoading} style={{ background: 'var(--success)', borderColor: 'var(--success)', color: 'var(--on-accent)' }}>
                 Confirm & Resolve Cases
               </Button>
             </div>

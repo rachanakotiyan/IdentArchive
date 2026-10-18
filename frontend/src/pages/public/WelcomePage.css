@@ -17,7 +17,7 @@
   right: 0;
   z-index: var(--z-sticky);
   background: var(--warning);
-  color: #fff;
+  color: var(--on-accent);
   font-size: var(--text-xs);
   font-family: var(--font-mono);
   text-align: center;

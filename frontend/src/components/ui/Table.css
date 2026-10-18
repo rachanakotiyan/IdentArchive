@@ -86,9 +86,9 @@
   cursor: not-allowed;
 }
 .pagination__btn[aria-current="page"] {
-  background: var(--accent);
+  background: var(--accent-action, var(--accent));
   color: var(--on-accent);
-  border-color: var(--accent);
+  border-color: var(--accent-action-border, var(--accent));
 }
 .pagination__btn:focus-visible {
   outline: 2px solid var(--accent);
