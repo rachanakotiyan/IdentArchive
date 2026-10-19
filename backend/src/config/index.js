@@ -19,6 +19,18 @@ if (allowedOrigins.length === 0) {
   throw new Error('Invalid CORS_ORIGIN configuration: at least one origin must be specified.')
 }
 
+const rawJwtSecret = process.env.JWT_SECRET
+
+if (!rawJwtSecret) {
+  throw new Error('Missing required JWT_SECRET environment variable. Please define JWT_SECRET in your .env file.')
+}
+
+if (nodeEnv === 'production' && rawJwtSecret.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long in production mode.')
+}
+
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '1d'
+
 export const config = Object.freeze({
   port: parsedPort,
   nodeEnv,
@@ -27,6 +39,10 @@ export const config = Object.freeze({
   isTest: nodeEnv === 'test',
   cors: {
     allowedOrigins,
+  },
+  auth: {
+    jwtSecret: rawJwtSecret,
+    jwtExpiresIn,
   },
 })
 
