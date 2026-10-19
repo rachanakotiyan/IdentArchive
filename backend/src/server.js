@@ -1,8 +1,6 @@
-import 'dotenv/config'
 import app from './app.js'
+import config from './config/index.js'
 
-const port = process.env.PORT || 3000
-
-app.listen(port, () => {
-  console.log(`IdentArchive API server listening on port ${port}`)
+app.listen(config.port, () => {
+  console.log(`IdentArchive API server listening on port ${config.port} (${config.nodeEnv})`)
 })

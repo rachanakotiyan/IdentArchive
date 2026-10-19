@@ -17,6 +17,17 @@ export const errorHandler = (err, req, res, next) => {
     })
   }
 
+  // Handle request entity too large (body limit exceeded)
+  if (err.type === 'entity.too.large' || err.status === 413 || err.statusCode === 413) {
+    return res.status(413).json({
+      success: false,
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Request payload exceeds size limit',
+      },
+    })
+  }
+
   // Handle known operational application errors
   if (err instanceof AppError || err.isOperational) {
     const errorPayload = {
