@@ -5,7 +5,10 @@
 import { MOCK_USERS } from '../mock/users.js';
 import { withLatency } from '../mock/latency.js';
 
+import { setTokenProvider } from './apiClient.js';
+
 const SESSION_KEY = 'ia-session';
+const TOKEN_KEY = 'ia-token';
 
 function saveSession(user) {
   try {
@@ -20,10 +23,40 @@ function saveSession(user) {
 function clearSession() {
   try {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
   } catch {
     // ignore
   }
 }
+
+/**
+ * Retrieve the active authentication token from session storage, if present.
+ * In mock demo mode, returns null because real tokens are not used.
+ *
+ * @returns {string | null}
+ */
+export function getStoredToken() {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Retrieve current session state containing user profile and token.
+ *
+ * @returns {{ user: object | null, token: string | null }}
+ */
+export function getStoredSession() {
+  return {
+    user: getCurrentUser(),
+    token: getStoredToken(),
+  };
+}
+
+// Wire apiClient token provider to dynamic session token getter
+setTokenProvider(getStoredToken);
 
 export function getCurrentUser() {
   try {
