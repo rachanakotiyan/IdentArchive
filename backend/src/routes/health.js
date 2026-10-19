@@ -1,12 +1,8 @@
 import { Router } from 'express'
+import { getHealth } from '../controllers/healthController.js'
 
 const router = Router()
 
-router.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'IdentArchive API is running',
-  })
-})
+router.get('/health', getHealth)
 
 export default router
