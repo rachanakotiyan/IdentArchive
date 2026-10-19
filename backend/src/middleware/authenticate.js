@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { verifyToken } from '../utils/token.js'
+import { verifyToken, tokenClaimsSchema } from '../utils/token.js'
 import { AppError } from '../utils/errors.js'
 
 /**
@@ -9,6 +9,7 @@ import { AppError } from '../utils/errors.js'
  * 1. An Authorization header is present.
  * 2. It follows the "Bearer <token>" format.
  * 3. The token signature is valid and has not expired.
+ * 4. Token payload strictly satisfies tokenClaimsSchema (valid userId and recognized role).
  *
  * Populates req.user with verified { userId, role } on success.
  */
@@ -29,13 +30,14 @@ export const authenticate = (req, res, next) => {
   try {
     const decoded = verifyToken(token)
 
-    if (!decoded.userId || !decoded.role) {
-      return next(new AppError('Invalid token payload: missing required claims.', 401, 'INVALID_TOKEN'))
+    const claimsResult = tokenClaimsSchema.safeParse(decoded)
+    if (!claimsResult.success) {
+      return next(new AppError('Invalid token payload: claims verification failed.', 401, 'INVALID_TOKEN'))
     }
 
     req.user = {
-      userId: decoded.userId,
-      role: decoded.role,
+      userId: claimsResult.data.userId,
+      role: claimsResult.data.role,
     }
 
     return next()
