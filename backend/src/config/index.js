@@ -31,6 +31,10 @@ if (nodeEnv === 'production' && rawJwtSecret.length < 32) {
 
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '1d'
 
+const rawDbPort = process.env.DB_PORT || '3306'
+const parsedDbPort = Number(rawDbPort)
+const dbPort = Number.isInteger(parsedDbPort) && parsedDbPort >= 1 && parsedDbPort <= 65535 ? parsedDbPort : 3306
+
 export const config = Object.freeze({
   port: parsedPort,
   nodeEnv,
@@ -43,6 +47,13 @@ export const config = Object.freeze({
   auth: {
     jwtSecret: rawJwtSecret,
     jwtExpiresIn,
+  },
+  db: {
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: dbPort,
+    user: process.env.DB_USER || process.env.DB_APP_USER || 'identarchive_app',
+    password: process.env.DB_PASSWORD ?? process.env.DB_APP_PASSWORD ?? '',
+    database: process.env.DB_NAME || 'identarchive',
   },
 })
 
