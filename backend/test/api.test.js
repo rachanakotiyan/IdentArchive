@@ -1,6 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import app from '../src/app.js'
+import { closePool } from '../src/config/database.js'
 
 describe('API Foundation & Global Middleware', () => {
   let server
@@ -17,17 +18,18 @@ describe('API Foundation & Global Middleware', () => {
     if (server) {
       await new Promise((resolve) => server.close(resolve))
     }
+    await closePool()
   })
 
-  it('GET /api/health returns 200 OK with unchanged response and security headers', async () => {
+  it('GET /api/health returns 200 OK with health status and security headers', async () => {
     const res = await fetch(`${baseUrl}/api/health`)
     assert.equal(res.status, 200)
 
     const body = await res.json()
-    assert.deepEqual(body, {
-      status: 'ok',
-      message: 'IdentArchive API is running',
-    })
+    assert.equal(body.status, 'ok')
+    assert.equal(body.message, 'IdentArchive API is running')
+    assert.ok(body.database, 'body.database should be defined')
+    assert.equal(typeof body.database.connected, 'boolean')
 
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff')
     assert.ok(res.headers.get('x-frame-options'))
