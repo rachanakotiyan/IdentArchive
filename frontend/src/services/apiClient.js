@@ -86,9 +86,10 @@ export async function apiRequest(endpoint, options = {}) {
     ...fetchOptions
   } = options;
 
+  const cleanBaseUrl = (baseUrl || '').replace(/\/+$/, '');
   const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
     ? endpoint
-    : `${baseUrl}/${endpoint.replace(/^\/+/, '')}`;
+    : `${cleanBaseUrl}/${endpoint.replace(/^\/+/, '')}`;
 
   const headers = { ...customHeaders };
 
@@ -105,7 +106,13 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   let serializedBody = body;
-  if (body !== undefined && typeof body !== 'string' && !(body instanceof FormData) && !(body instanceof Blob)) {
+  if (
+    body !== undefined &&
+    typeof body !== 'string' &&
+    !(typeof FormData !== 'undefined' && body instanceof FormData) &&
+    !(typeof Blob !== 'undefined' && body instanceof Blob) &&
+    !(typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams)
+  ) {
     serializedBody = JSON.stringify(body);
   }
 
@@ -141,7 +148,7 @@ export async function apiRequest(endpoint, options = {}) {
   if (!response.ok) {
     // Extract structured error format from IdentArchive backend: { success: false, error: { code, message, details } }
     const errorPayload = responseData && typeof responseData === 'object' ? responseData.error || responseData : null;
-    const message = errorPayload?.message || (typeof responseData === 'string' ? responseData : `Request failed with status ${response.status}`);
+    const message = errorPayload?.message || (typeof responseData === 'string' && responseData.trim() ? responseData : `Request failed with status ${response.status}`);
     const code = errorPayload?.code;
     const details = errorPayload?.details || [];
 
