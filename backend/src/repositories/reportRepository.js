@@ -1,7 +1,6 @@
-import { getPool } from '../config/database.js';
+import pool from '../config/database.js'
 
 export const createReport = async (reportData, userId = null) => {
-  const pool = getPool();
   const connection = await pool.getConnection();
 
   try {
@@ -59,7 +58,6 @@ export const createReport = async (reportData, userId = null) => {
 };
 
 export const getReportsByUserId = async (userId) => {
-  const pool = getPool();
   const [rows] = await pool.query(
     `SELECT report_id, reference_no, report_type, subject_name, status, created_at 
      FROM reports WHERE user_id = ? ORDER BY created_at DESC`,
@@ -69,7 +67,6 @@ export const getReportsByUserId = async (userId) => {
 };
 
 export const getReportByRefAndPin = async (referenceNo, pin) => {
-  const pool = getPool();
   const [rows] = await pool.query(
     `SELECT reference_no, report_type, subject_name, status, created_at, updated_at 
      FROM reports WHERE reference_no = ? AND tracking_pin = ?`,
