@@ -7,7 +7,7 @@ export const createReport = async (reportData, userId = null) => {
   try {
     await connection.beginTransaction();
 
-    // 1. Insert report with temporary placeholder reference_no
+    // 1. Insert report with temporary reference number
     const [result] = await connection.query(
       `INSERT INTO reports (
         user_id, report_type, subject_name, age, gender, 
@@ -30,11 +30,11 @@ export const createReport = async (reportData, userId = null) => {
 
     const reportId = result.insertId;
 
-    // 2. Format reference number (REF-YYYYMMDD-ID)
+    // 2. Format final reference number: REF-YYYYMMDD-XXXX
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const referenceNo = `REF-${dateStr}-${String(reportId).padStart(4, '0')}`;
 
-    // 3. Update with final formatted reference_no inside same transaction
+    // 3. Update report with formatted reference_no in same transaction
     await connection.query(
       `UPDATE reports SET reference_no = ? WHERE report_id = ?`,
       [referenceNo, reportId]
@@ -42,7 +42,7 @@ export const createReport = async (reportData, userId = null) => {
 
     await connection.commit();
 
-    // 4. Return created report
+    // 4. Return created record
     const [rows] = await pool.query(
       `SELECT report_id, reference_no, report_type, subject_name, status, created_at 
        FROM reports WHERE report_id = ?`,
