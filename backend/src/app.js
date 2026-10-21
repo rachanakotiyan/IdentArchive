@@ -5,7 +5,6 @@ import requestLogger from './middleware/requestLogger.js'
 import apiRouter from './routes/index.js'
 import notFoundHandler from './middleware/notFoundHandler.js'
 import errorHandler from './middleware/errorHandler.js'
-import reportRoutes from './routes/reportRoutes.js';
 
 const app = express()
 
@@ -15,7 +14,6 @@ app.use(requestLogger)
 app.use(express.json({ limit: '1mb' }))
 
 app.use('/api', apiRouter)
-app.use('/api/reports', reportRoutes)
 app.use(notFoundHandler)
 app.use(errorHandler)
 

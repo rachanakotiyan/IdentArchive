@@ -1,76 +1,134 @@
+import crypto from 'node:crypto'
 import pool from '../config/database.js'
+import { AppError } from '../utils/errors.js'
 
-export const createReport = async (reportData, userId = null) => {
-  const connection = await pool.getConnection();
+const REPORT_FIELDS = `
+  report_id, reference_no, report_type, status, person_name, age, gender,
+  description, event_date, location_address, location_pincode, location_city,
+  location_district, location_state, created_at, updated_at
+`
 
-  try {
-    await connection.beginTransaction();
-
-    // 1. Insert report with temporary reference number
-    const [result] = await connection.query(
-      `INSERT INTO reports (
-        user_id, report_type, subject_name, age, gender, 
-        last_seen_location, description, contact_email, 
-        contact_phone, tracking_pin, reference_no, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'TEMP', 'PENDING')`,
-      [
-        userId,
-        reportData.report_type,
-        reportData.subject_name,
-        reportData.age || null,
-        reportData.gender || null,
-        reportData.last_seen_location || null,
-        reportData.description || null,
-        reportData.contact_email,
-        reportData.contact_phone || null,
-        reportData.tracking_pin,
-      ]
-    );
-
-    const reportId = result.insertId;
-
-    // 2. Format final reference number: REF-YYYYMMDD-XXXX
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const referenceNo = `REF-${dateStr}-${String(reportId).padStart(4, '0')}`;
-
-    // 3. Update report with formatted reference_no in same transaction
-    await connection.query(
-      `UPDATE reports SET reference_no = ? WHERE report_id = ?`,
-      [referenceNo, reportId]
-    );
-
-    await connection.commit();
-
-    // 4. Return created record
-    const [rows] = await pool.query(
-      `SELECT report_id, reference_no, report_type, subject_name, status, created_at 
-       FROM reports WHERE report_id = ?`,
-      [reportId]
-    );
-
-    return rows[0];
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+export async function createReport(reportData, userId) {
+  if (!userId) {
+    throw new AppError('Authentication required to submit a report.', 401, 'UNAUTHORIZED')
   }
-};
 
-export const getReportsByUserId = async (userId) => {
-  const [rows] = await pool.query(
-    `SELECT report_id, reference_no, report_type, subject_name, status, created_at 
-     FROM reports WHERE user_id = ? ORDER BY created_at DESC`,
+  const reportId = crypto.randomUUID()
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+
+    const [users] = await connection.execute(
+      'SELECT name, email, phone FROM users WHERE user_id = ? LIMIT 1',
+      [userId]
+    )
+    const reporter = users[0]
+    if (!reporter) {
+      throw new AppError('User account not found.', 401, 'UNAUTHORIZED')
+    }
+
+    const reportType = reportData.report_type
+    const reporterName = reportData.reporter_name || reporter.name
+    const reporterPhone = reportData.reporter_phone || reportData.contact_phone || reporter.phone
+    const reporterEmail = reportData.reporter_email || reportData.contact_email || reporter.email
+    const required = [
+      reportType,
+      reporterName,
+      reporterPhone,
+      reporterEmail,
+      reportData.description,
+      reportData.gender,
+      reportData.event_date,
+      reportData.location_address,
+      reportData.location_pincode,
+      reportData.location_city,
+      reportData.location_district,
+      reportData.location_state,
+    ]
+    if (required.some((value) => value === undefined || value === null || String(value).trim() === '')) {
+      throw new AppError('Missing required report fields.', 400, 'VALIDATION_ERROR')
+    }
+    if (!['missing', 'found'].includes(reportType)) {
+      throw new AppError('report_type must be missing or found.', 400, 'VALIDATION_ERROR')
+    }
+    if (!['male', 'female', 'other', 'unknown'].includes(reportData.gender)) {
+      throw new AppError('gender is invalid.', 400, 'VALIDATION_ERROR')
+    }
+
+    const [result] = await connection.execute(
+      `INSERT INTO reports (
+        report_id, reference_no, report_type, reporter_id, reporter_name,
+        reporter_phone, reporter_email, description, person_name, age, gender,
+        height_cm, physical_features, identifying_marks, event_date,
+        location_address, location_pincode, location_city, location_district,
+        location_state, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [
+        reportId,
+        reportId,
+        reportType,
+        userId,
+        reporterName,
+        reporterPhone,
+        reporterEmail,
+        reportData.description,
+        reportData.person_name || reportData.subject_name || null,
+        reportData.age ?? null,
+        reportData.gender,
+        reportData.height_cm ?? null,
+        reportData.physical_features || null,
+        reportData.identifying_marks || null,
+        reportData.event_date,
+        reportData.location_address,
+        reportData.location_pincode,
+        reportData.location_city,
+        reportData.location_district,
+        reportData.location_state,
+      ]
+    )
+
+    const sequence = Number(result.insertId)
+    const date = new Date().toISOString().slice(0, 10).replaceAll('-', '')
+    const referenceNo = `REF-${date}-${String(sequence).padStart(6, '0')}`
+    await connection.execute(
+      'UPDATE reports SET reference_no = ? WHERE report_id = ?',
+      [referenceNo, reportId]
+    )
+    await connection.execute(
+      'INSERT INTO report_history (report_id, event, actor_id) VALUES (?, ?, ?)',
+      [reportId, 'Report submitted', userId]
+    )
+    await connection.commit()
+
+    const [rows] = await connection.execute(
+      `SELECT ${REPORT_FIELDS} FROM reports WHERE report_id = ? LIMIT 1`,
+      [reportId]
+    )
+    return rows[0]
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}
+
+export async function getReportsByUserId(userId) {
+  const [rows] = await pool.execute(
+    `SELECT ${REPORT_FIELDS} FROM reports
+     WHERE reporter_id = ? ORDER BY created_at DESC`,
     [userId]
-  );
-  return rows;
-};
+  )
+  return rows
+}
 
-export const getReportByRefAndPin = async (referenceNo, pin) => {
-  const [rows] = await pool.query(
-    `SELECT reference_no, report_type, subject_name, status, created_at, updated_at 
-     FROM reports WHERE reference_no = ? AND tracking_pin = ?`,
-    [referenceNo, pin]
-  );
-  return rows[0] || null;
-};
+export async function getReportByRefAndEmail(referenceNo, email) {
+  const [rows] = await pool.execute(
+    `SELECT reference_no, report_type, status, person_name, age, gender,
+            description, event_date, location_city, location_district, location_state,
+            created_at, updated_at
+     FROM reports WHERE reference_no = ? AND reporter_email = ? LIMIT 1`,
+    [referenceNo, String(email).trim().toLowerCase()]
+  )
+  return rows[0] || null
+}

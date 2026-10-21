@@ -4,15 +4,7 @@ import { AppError } from '../utils/errors.js'
 
 export const submitReport = async (req, res, next) => {
   try {
-    const { report_type, subject_name, contact_email, tracking_pin } = req.body || {}
-
-    if (!report_type || !subject_name || !contact_email || !tracking_pin) {
-      throw new AppError('Missing required report fields', 400, 'VALIDATION_ERROR')
-    }
-
-    const userId = req.user ? req.user.userId : null;
-    const report = await reportRepo.createReport(req.body, userId);
-
+    const report = await reportRepo.createReport(req.body || {}, req.user.userId)
     return sendSuccess(res, report, 201, 'Report submitted successfully')
   } catch (error) {
     return next(error)
@@ -30,17 +22,15 @@ export const getMyReports = async (req, res, next) => {
 
 export const trackReport = async (req, res, next) => {
   try {
-    const { referenceNo } = req.params;
-    const pin = req.query.pin || req.body?.pin
-
-    if (!pin) {
-      throw new AppError('Tracking PIN is required', 400, 'VALIDATION_ERROR')
+    const { referenceNo } = req.params
+    const email = req.query.email || req.body?.email
+    if (typeof email !== 'string' || !email.trim()) {
+      throw new AppError('Email is required to track a report.', 400, 'VALIDATION_ERROR')
     }
 
-    const report = await reportRepo.getReportByRefAndPin(referenceNo, pin);
-
+    const report = await reportRepo.getReportByRefAndEmail(referenceNo, email)
     if (!report) {
-      throw new AppError('Invalid reference number or tracking PIN', 404, 'NOT_FOUND')
+      throw new AppError('Invalid reference number or email.', 404, 'NOT_FOUND')
     }
 
     return sendSuccess(res, report, 200, 'Report status retrieved')

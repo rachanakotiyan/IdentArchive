@@ -8,7 +8,7 @@ import staffReportRoutes from './staffReportRoutes.js';
 const router = Router();
 
 router.use('/auth', authRoutes);
-router.use('/health', healthRoutes);
+router.use(healthRoutes);
 router.use('/admin', adminRoutes);
 router.use('/reports', reportRoutes);
 router.use('/staff/reports', staffReportRoutes);

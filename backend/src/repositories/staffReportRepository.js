@@ -1,203 +1,205 @@
-import { getPool } from '../config/database.js';
+import crypto from 'node:crypto'
+import pool from '../config/database.js'
 
-/**
- * Retrieves submitted reports with optional status filtering.
- */
-export const getStaffReportsQueue = async ({ status, page = 1, limit = 20 }) => {
-  const pool = getPool();
-  const offset = (Number(page) - 1) * Number(limit);
-  const queryParams = [];
+const STAFF_REPORT_FIELDS = `
+  r.report_id, r.reference_no, r.report_type, r.status, r.priority,
+  r.reporter_name, r.reporter_phone, r.reporter_email, r.person_name,
+  r.age, r.gender, r.description, r.event_date, r.location_address,
+  r.location_pincode, r.location_city, r.location_district, r.location_state,
+  r.assigned_officer_id, r.created_at, r.updated_at
+`
 
-  let sql = `
-    SELECT 
-      r.report_id,
-      r.reference_no,
-      r.report_type,
-      r.subject_name,
-      r.age,
-      r.gender,
-      r.last_seen_location,
-      r.contact_email,
-      r.status,
-      r.assigned_officer_id,
-      r.created_at,
-      r.updated_at
-    FROM reports r
-  `;
+const writableStatuses = ['submitted', 'under_review', 'info_requested']
+
+export async function getStaffReportsQueue({ status, page = 1, limit = 20 }) {
+  const safePage = Math.max(1, Math.trunc(Number(page) || 1))
+  const safeLimit = Math.min(100, Math.max(1, Math.trunc(Number(limit) || 20)))
+  const params = []
+  let sql = `SELECT ${STAFF_REPORT_FIELDS} FROM reports r`
 
   if (status) {
-    sql += ` WHERE r.status = ?`;
-    queryParams.push(status);
+    sql += ' WHERE r.status = ?'
+    params.push(String(status).toLowerCase())
   }
 
-  sql += ` ORDER BY r.created_at ASC LIMIT ? OFFSET ?`;
-  queryParams.push(Number(limit), Number(offset));
+  sql += ' ORDER BY r.created_at ASC LIMIT ? OFFSET ?'
+  params.push(safeLimit, (safePage - 1) * safeLimit)
+  const [rows] = await pool.execute(sql, params)
+  return rows
+}
 
-  const [rows] = await pool.query(sql, queryParams);
-  return rows;
-};
-
-/**
- * Assigns a report to an officer and sets status to UNDER_REVIEW.
- */
-export const assignReportToOfficer = async (reportId, officerUserId) => {
-  const pool = getPool();
-  const [result] = await pool.query(
-    `UPDATE reports 
-     SET assigned_officer_id = ?, status = 'UNDER_REVIEW', updated_at = NOW()
-     WHERE report_id = ? AND status IN ('PENDING', 'UNDER_REVIEW', 'INFO_REQUESTED')`,
-    [officerUserId, reportId]
-  );
-
-  if (result.affectedRows === 0) {
-    return null;
-  }
-
-  const [rows] = await pool.query(
-    `SELECT report_id, reference_no, status, assigned_officer_id, updated_at 
-     FROM reports WHERE report_id = ?`,
-    [reportId]
-  );
-  return rows[0];
-};
-
-/**
- * Requests more information from reporter with audit note.
- */
-export const requestMoreInfo = async (reportId, note) => {
-  const pool = getPool();
-  const [result] = await pool.query(
-    `UPDATE reports 
-     SET status = 'INFO_REQUESTED', 
-         description = CONCAT(IFNULL(description, ''), '\n[INFO REQUEST]: ', ?),
-         updated_at = NOW()
-     WHERE report_id = ?`,
-    [note, reportId]
-  );
-
-  if (result.affectedRows === 0) {
-    return null;
-  }
-
-  const [rows] = await pool.query(
-    `SELECT report_id, reference_no, status, updated_at FROM reports WHERE report_id = ?`,
-    [reportId]
-  );
-  return rows[0];
-};
-
-/**
- * Rejects a report with mandatory rejection reason.
- */
-export const rejectReport = async (reportId, rejectionReason) => {
-  const pool = getPool();
-  const [result] = await pool.query(
-    `UPDATE reports 
-     SET status = 'REJECTED', 
-         description = CONCAT(IFNULL(description, ''), '\n[REJECTION REASON]: ', ?),
-         updated_at = NOW()
-     WHERE report_id = ? AND status != 'APPROVED'`,
-    [rejectionReason, reportId]
-  );
-
-  if (result.affectedRows === 0) {
-    return null;
-  }
-
-  const [rows] = await pool.query(
-    `SELECT report_id, reference_no, status, updated_at FROM reports WHERE report_id = ?`,
-    [reportId]
-  );
-  return rows[0];
-};
-
-/**
- * Atomically approves a report and creates the corresponding case.
- * Runs inside a single MySQL transaction.
- */
-export const approveReportAndCreateCase = async (reportId, caseData = {}) => {
-  const pool = getPool();
-  const connection = await pool.getConnection();
-
+export async function assignReportToOfficer(reportId, officerUserId, actorId = officerUserId) {
+  const connection = await pool.getConnection()
   try {
-    await connection.beginTransaction();
+    await connection.beginTransaction()
+    const [officers] = await connection.execute(
+      'SELECT officer_id FROM officers WHERE user_id = ? AND active = 1 LIMIT 1',
+      [officerUserId]
+    )
+    if (!officers[0]) {
+      await connection.rollback()
+      return null
+    }
 
-    // 1. Lock and verify the report
-    const [reportRows] = await connection.query(
-      `SELECT * FROM reports WHERE report_id = ? FOR UPDATE`,
+    const [result] = await connection.execute(
+      `UPDATE reports SET assigned_officer_id = ?, status = 'under_review'
+       WHERE report_id = ? AND status IN (?, ?, ?)`,
+      [officers[0].officer_id, reportId, ...writableStatuses]
+    )
+    if (!result.affectedRows) {
+      await connection.rollback()
+      return null
+    }
+    await connection.execute(
+      'INSERT INTO report_history (report_id, event, actor_id) VALUES (?, ?, ?)',
+      [reportId, 'Report assigned for review', actorId]
+    )
+    await connection.commit()
+    const [rows] = await connection.execute(
+      `SELECT report_id, reference_no, status, assigned_officer_id, updated_at
+       FROM reports WHERE report_id = ? LIMIT 1`,
       [reportId]
-    );
+    )
+    return rows[0] || null
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}
 
-    if (reportRows.length === 0) {
-      await connection.rollback();
-      return null;
+async function updateReportStatus(reportId, status, reviewNote, event, actorId) {
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+    const [result] = await connection.execute(
+      `UPDATE reports SET status = ?, review_note = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE report_id = ? AND status IN (?, ?, ?)`,
+      [status, reviewNote, reportId, ...writableStatuses]
+    )
+    if (!result.affectedRows) {
+      await connection.rollback()
+      return null
+    }
+    await connection.execute(
+      'INSERT INTO report_history (report_id, event, actor_id) VALUES (?, ?, ?)',
+      [reportId, event, actorId || null]
+    )
+    await connection.commit()
+    const [rows] = await connection.execute(
+      'SELECT report_id, reference_no, status, updated_at FROM reports WHERE report_id = ? LIMIT 1',
+      [reportId]
+    )
+    return rows[0] || null
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}
+
+export function requestMoreInfo(reportId, note, actorId) {
+  return updateReportStatus(reportId, 'info_requested', note, 'Additional information requested', actorId)
+}
+
+export function rejectReport(reportId, rejectionReason, actorId) {
+  return updateReportStatus(reportId, 'rejected', rejectionReason, 'Report rejected', actorId)
+}
+
+export async function approveReportAndCreateCase(reportId, caseData = {}, actorId = null) {
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+
+    const [reportRows] = await connection.execute(
+      'SELECT * FROM reports WHERE report_id = ? FOR UPDATE',
+      [reportId]
+    )
+    const report = reportRows[0]
+    if (!report) {
+      await connection.rollback()
+      return null
+    }
+    if (report.status === 'approved') {
+      const error = new Error('Report is already approved')
+      error.code = 'ALREADY_APPROVED'
+      throw error
+    }
+    if (!writableStatuses.includes(report.status)) {
+      const error = new Error('Report cannot be approved from its current status')
+      error.code = 'INVALID_REPORT_STATUS'
+      throw error
     }
 
-    const report = reportRows[0];
+    const caseId = crypto.randomUUID()
+    const currentYear = new Date().getUTCFullYear()
+    const crimeType = caseData.crime_type ||
+      (report.report_type === 'missing' ? 'missing_person' : 'unidentified_person')
+    const caseStatus = caseData.case_status || 'open'
+    const kind = report.report_type
+    const title = caseData.title || `${kind === 'missing' ? 'Missing' : 'Found'} person report ${report.reference_no}`
+    const description = report.description
+    const shortDescription = caseData.short_description || description.slice(0, 500)
 
-    if (report.status === 'APPROVED') {
-      await connection.rollback();
-      const error = new Error('Report is already approved');
-      error.code = 'ALREADY_APPROVED';
-      throw error;
-    }
-
-    // 2. Insert new case with temporary placeholder case_number
-    const caseType = caseData.case_type || (report.report_type === 'MISSING' ? 'MISSING' : 'FOUND');
-    const title = caseData.title || `Case for ${report.subject_name}`;
-
-    const [caseResult] = await connection.query(
+    const [caseResult] = await connection.execute(
       `INSERT INTO cases (
-        case_number, case_type, title, subject_name, age, gender, 
-        last_known_location, description, status, created_at, updated_at
-      ) VALUES ('TEMP', ?, ?, ?, ?, ?, ?, ?, 'OPEN', NOW(), NOW())`,
+        case_id, case_number, title, crime_type, case_status, kind, person_name,
+        age, gender, event_date, short_description, description, physical_features,
+        identifying_marks, height_cm, city, district, state, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       [
-        caseType,
+        caseId,
+        caseId,
         title,
-        report.subject_name,
-        report.age || null,
-        report.gender || null,
-        report.last_seen_location || null,
-        report.description || null
+        crimeType,
+        caseStatus,
+        kind,
+        report.person_name,
+        report.age,
+        report.gender,
+        report.event_date,
+        shortDescription,
+        description,
+        report.physical_features,
+        report.identifying_marks,
+        report.height_cm,
+        report.location_city,
+        report.location_district,
+        report.location_state,
       ]
-    );
+    )
 
-    const caseId = caseResult.insertId;
-
-    // 3. Format final case_number (e.g. CASE-YYYYMMDD-XXXX)
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const caseNumber = `CASE-${dateStr}-${String(caseId).padStart(4, '0')}`;
-
-    // 4. Update case with final formatted case_number
-    await connection.query(
-      `UPDATE cases SET case_number = ? WHERE case_id = ?`,
+    const sequence = Number(caseResult.insertId)
+    const caseNumber = `IA-${currentYear}-${String(sequence).padStart(4, '0')}`
+    await connection.execute(
+      'UPDATE cases SET case_number = ? WHERE case_id = ?',
       [caseNumber, caseId]
-    );
-
-    // 5. Update report to APPROVED and link created case_id
-    await connection.query(
-      `UPDATE reports 
-       SET status = 'APPROVED', case_id = ?, updated_at = NOW() 
+    )
+    await connection.execute(
+      `UPDATE reports SET status = 'approved', case_id = ?, updated_at = CURRENT_TIMESTAMP
        WHERE report_id = ?`,
       [caseId, reportId]
-    );
+    )
+    await connection.execute(
+      'INSERT INTO report_history (report_id, event, actor_id) VALUES (?, ?, ?)',
+      [reportId, 'Report approved and case created', actorId]
+    )
+    await connection.commit()
 
-    await connection.commit();
-
-    // 6. Fetch created case record
-    const [newCaseRows] = await pool.query(
-      `SELECT * FROM cases WHERE case_id = ?`,
+    const [newCaseRows] = await connection.execute(
+      `SELECT case_id, case_number, title, crime_type, case_status, kind, person_name,
+              age, gender, event_date, short_description, description, city, district,
+              state, created_at
+       FROM cases WHERE case_id = ? LIMIT 1`,
       [caseId]
-    );
-
-    return {
-      report_id: reportId,
-      case: newCaseRows[0]
-    };
+    )
+    return { report_id: reportId, case: newCaseRows[0] }
   } catch (error) {
-    await connection.rollback();
-    throw error;
+    await connection.rollback()
+    throw error
   } finally {
-    connection.release();
+    connection.release()
   }
-};
+}
