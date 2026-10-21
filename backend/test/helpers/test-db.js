@@ -160,12 +160,14 @@ export async function createCase(conn, overrides = {}) {
   const age = overrides.age !== undefined ? overrides.age : 30
   const height_cm = overrides.heightCm !== undefined ? overrides.heightCm : 170
 
+  const person_name = overrides.personName || overrides.person_name || null
+
   await conn.execute(
     `INSERT INTO cases (
       case_id, case_number, title, crime_type, case_status, kind,
-      gender, event_date, short_description, description,
+      person_name, gender, event_date, short_description, description,
       city, district, state, age, height_cm, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     [
       case_id,
       case_number,
@@ -173,6 +175,7 @@ export async function createCase(conn, overrides = {}) {
       crime_type,
       case_status,
       kind,
+      person_name,
       gender,
       event_date,
       short_description,
@@ -185,7 +188,7 @@ export async function createCase(conn, overrides = {}) {
     ]
   )
 
-  return { case_id, case_number, kind, age, height_cm }
+  return { case_id, case_number, kind, age, height_cm, person_name }
 }
 
 export async function createReport(conn, overrides = {}) {
