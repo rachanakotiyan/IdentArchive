@@ -60,52 +60,90 @@ export async function createAdminUser(input) {
   }
 }
 
-function promptText(rl, question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => resolve(answer))
-  })
-}
+// ---------------------------------------------------------------------------
+// Terminal input. One reader is used for every prompt (mixing readline with raw
+// mode was unreliable). Passwords echo "*" so you can see that typing works.
+// If your terminal cannot do raw input, run: npm run create-admin -- --visible
+// (the password is then shown on screen as you type).
+// ---------------------------------------------------------------------------
+const VISIBLE = process.argv.includes('--visible')
 
-function promptHiddenPassword() {
-  if (!process.stdin.isTTY || typeof process.stdin.setRawMode !== 'function') {
-    throw new Error('Create-admin requires an interactive terminal to hide the password.')
-  }
-
+function askRaw(question, { hidden = false } = {}) {
   return new Promise((resolve, reject) => {
-    let password = ''
-    process.stdout.write('Password: ')
-    process.stdin.setRawMode(true)
-    process.stdin.resume()
-    process.stdin.setEncoding('utf8')
+    const stdin = process.stdin
+    let value = ''
+    process.stdout.write(question)
+    stdin.setEncoding('utf8')
+    stdin.setRawMode(true)
+    stdin.resume()
 
-    const finish = (error = null) => {
-      process.stdin.setRawMode(false)
-      process.stdin.removeListener('data', onData)
+    const finish = (error) => {
+      stdin.removeListener('data', onData)
+      stdin.setRawMode(false)
+      stdin.pause()
       process.stdout.write('\n')
       if (error) reject(error)
-      else resolve(password)
+      else resolve(value)
     }
 
-    const onData = (character) => {
-      for (const key of character) {
-        if (key === '\u0003') {
-          finish(new Error('Admin creation cancelled.'))
-          return
-        }
-        if (key === '\r' || key === '\n') {
-          finish()
-          return
-        }
+    const onData = (chunk) => {
+      // Drop escape sequences such as arrow keys / Home / Delete.
+      const text = chunk.replace(/\u001b(?:\[[0-9;]*[A-Za-z~]|O[A-Za-z])/g, '')
+      for (const key of text) {
+        if (key === '\u0003') return finish(new Error('Admin creation cancelled.'))
+        if (key === '\r' || key === '\n') return finish()
         if (key === '\u007f' || key === '\b') {
-          password = Array.from(password).slice(0, -1).join('')
-        } else {
-          password += key
+          if (value.length > 0) {
+            value = Array.from(value).slice(0, -1).join('')
+            process.stdout.write('\b \b')
+          }
+        } else if (key >= ' ') {
+          value += key
+          process.stdout.write(hidden ? '*' : key)
         }
       }
     }
-
-    process.stdin.on('data', onData)
+    stdin.on('data', onData)
   })
+}
+
+async function collectCredentials() {
+  if (VISIBLE) {
+    console.log('WARNING: --visible is on. Your password will be shown on screen.')
+    const rl = readline.createInterface({ input: process.stdin })
+    const lines = rl[Symbol.asyncIterator]()
+    const ask = async (question) => {
+      process.stdout.write(question)
+      const { value, done } = await lines.next()
+      if (done) throw Object.assign(new Error('Input ended before all fields were entered.'), { name: 'AdminInputError' })
+      return value
+    }
+    try {
+      const name = await ask('Full name: ')
+      const email = await ask('Email: ')
+      const password = await ask('Password (min 12 chars, visible): ')
+      return { name, email, password }
+    } finally {
+      rl.close()
+    }
+  }
+
+  if (!process.stdin.isTTY || typeof process.stdin.setRawMode !== 'function') {
+    throw Object.assign(
+      new Error('This terminal cannot hide password input. Open a normal terminal (PowerShell / Windows Terminal) and run again, or use: npm run create-admin -- --visible'),
+      { name: 'AdminInputError' }
+    )
+  }
+
+  const name = await askRaw('Full name: ')
+  const email = await askRaw('Email: ')
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const password = await askRaw('Password (min 12 chars, characters show as *): ', { hidden: true })
+    const confirm = await askRaw('Confirm password: ', { hidden: true })
+    if (password === confirm) return { name, email, password }
+    console.log('Passwords do not match. Try again.')
+  }
+  throw Object.assign(new Error('Passwords did not match 3 times. Aborting.'), { name: 'AdminInputError' })
 }
 
 async function main() {
@@ -114,18 +152,8 @@ async function main() {
   }
 
   console.log('=== IdentArchive - Create Admin User ===')
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  let name
-  let email
-  try {
-    name = await promptText(rl, 'Full name: ')
-    email = await promptText(rl, 'Email: ')
-  } finally {
-    rl.close()
-  }
-
-  const password = await promptHiddenPassword()
-  await createAdminUser({ name, email, password })
+  const credentials = await collectCredentials()
+  await createAdminUser(credentials)
   console.log('[create-admin] Admin user created.')
 }
 
