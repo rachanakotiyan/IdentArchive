@@ -1,130 +1,119 @@
-/**
- * Public privacy boundary: expose only the allowlisted public case fields below.
- * Never return reporter details, review notes, assigned officers, verification
- * data, or reports that have not become public cases. Only open, under-review,
- * and resolved cases are visible through this service.
- */
+import apiClient from './apiClient.js';
 import { MOCK_CASES } from '../mock/cases.js';
 import { MOCK_PINCODES } from '../mock/pincodes.js';
 import { withLatency } from '../mock/latency.js';
 
 const PUBLIC_STATUSES = ['open', 'under_review', 'resolved'];
 
-function ageRangeMatches(caseItem, minAge, maxAge) {
-  if (minAge == null && maxAge == null) return true;
-  const minimum = minAge == null ? Number.NEGATIVE_INFINITY : Number(minAge);
-  const maximum = maxAge == null ? Number.POSITIVE_INFINITY : Number(maxAge);
-  if (minAge != null && !Number.isFinite(minimum)) return false;
-  if (maxAge != null && !Number.isFinite(maximum)) return false;
-
-  if (Number.isFinite(caseItem.age)) {
-    return caseItem.age >= minimum && caseItem.age <= maximum;
-  }
-
-  const estimated = String(caseItem.estimatedAge ?? '').match(/\d+/g);
-  if (!estimated?.length) return false;
-  const ages = estimated.map(Number);
-  const estimatedMin = Math.min(...ages);
-  const estimatedMax = Math.max(...ages);
-  return estimatedMax >= minimum && estimatedMin <= maximum;
-}
-
-function sortPublicCases(results, sort) {
-  const sorted = [...results];
-  if (sort === 'oldest') return sorted.sort((a, b) => String(a.date ?? '').localeCompare(String(b.date ?? '')));
-  if (sort === 'name') {
-    return sorted.sort((a, b) =>
-      String(a.personName || a.title || '').localeCompare(String(b.personName || b.title || ''), undefined, { sensitivity: 'base' })
-    );
-  }
-  return sorted.sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
-}
-
-/** Return only the fields the public is allowed to see */
-function toPublicCase(c) {
+function caseView(record = {}) {
   return {
-    caseId:           c.caseId,
-    caseNumber:       c.caseNumber,
-    title:            c.title,
-    crimeType:        c.crimeType,
-    caseStatus:       c.caseStatus,
-    kind:             c.kind,
-    personName:       c.personName ?? null,
-    age:              c.age ?? null,
-    estimatedAge:     c.estimatedAge ?? null,
-    gender:           c.gender,
-    date:             c.date,
-    shortDescription: c.shortDescription,
-    city:             c.city,
-    district:         c.district,
-    state:            c.state,
+    caseId: record.case_id ?? record.caseId,
+    caseNumber: record.case_number ?? record.caseNumber,
+    title: record.title,
+    crimeType: record.crime_type ?? record.crimeType,
+    caseStatus: record.case_status ?? record.caseStatus,
+    kind: record.kind,
+    personName: record.person_name ?? record.personName ?? null,
+    age: record.age ?? null,
+    estimatedAge: record.estimated_age ?? record.estimatedAge ?? null,
+    gender: record.gender,
+    date: record.event_date ?? record.date,
+    shortDescription: record.short_description ?? record.shortDescription,
+    city: record.city,
+    district: record.district,
+    state: record.state,
+    description: record.description,
+    physicalFeatures: record.physical_features ?? record.physicalFeatures,
+    identifyingMarks: record.identifying_marks ?? record.identifyingMarks,
+    heightCm: record.height_cm ?? record.heightCm,
+    updates: (record.updates ?? []).map(updateView),
   };
 }
 
-function toPublicCaseDetail(c) {
+function updateView(update = {}) {
   return {
-    ...toPublicCase(c),
-    description:       c.description,
-    physicalFeatures:  c.physicalFeatures,
-    identifyingMarks:  c.identifyingMarks,
-    heightCm:          c.heightCm,
-    updates:           (c.updates ?? []).map(({ date, note }) => ({ date, note })),
+    date: update.update_date ?? update.date,
+    note: update.note,
+  };
+}
+
+function buildCaseQuery(params = {}) {
+  const query = new URLSearchParams();
+  const aliases = {
+    kind: 'case_type',
+    caseType: 'case_type',
+    status: 'case_status',
+    caseStatus: 'case_status',
+    minAge: 'age_min',
+    maxAge: 'age_max',
+    pageSize: 'limit',
+  };
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') continue;
+    query.set(aliases[key] || key, String(value));
+  }
+  return query.toString();
+}
+
+function getResponseData(response) {
+  return response?.data ?? response;
+}
+
+/**
+ * Fetch public cases with optional filters and pagination.
+ * @param {object} params
+ * @returns {Promise<{items: object[], total: number, page: number, pageSize: number}>}
+ */
+export async function getCases(params = {}) {
+  const query = buildCaseQuery(params);
+  const response = await apiClient.get(`/cases${query ? `?${query}` : ''}`);
+  const records = getResponseData(response);
+  const meta = response?.meta ?? {};
+  const page = Number(meta.page ?? params.page ?? 1);
+  const pageSize = Number(meta.limit ?? params.pageSize ?? params.limit ?? 20);
+  return {
+    items: (Array.isArray(records) ? records : records?.items ?? records?.cases ?? []).map(caseView),
+    total: Number(meta.total ?? records?.total ?? 0),
+    page,
+    pageSize,
   };
 }
 
 /**
- * @param {object} filters - { kind, status, gender, minAge, maxAge, fromDate, toDate, query, sort }
- * @param {number} page
- * @param {number} pageSize
+ * Backwards-compatible adapter for the existing public cases page.
  */
-export async function listCases(filters = {}, page = 1, pageSize = 12) {
-  return withLatency(() => {
-    let results = MOCK_CASES.filter(c => PUBLIC_STATUSES.includes(c.caseStatus));
-
-    if (filters.kind)   results = results.filter(c => c.kind === filters.kind);
-    if (filters.status) results = results.filter(c => c.caseStatus === filters.status);
-    if (filters.gender) results = results.filter(c => c.gender === filters.gender);
-    if (filters.minAge != null || filters.maxAge != null) {
-      results = results.filter(c => ageRangeMatches(c, filters.minAge, filters.maxAge));
-    }
-    if (filters.fromDate) results = results.filter(c => c.date >= filters.fromDate);
-    if (filters.toDate) results = results.filter(c => c.date <= filters.toDate);
-    if (filters.query) {
-      const q = filters.query.toLowerCase();
-      results = results.filter(c =>
-        String(c.personName ?? '').toLowerCase().includes(q) ||
-        String(c.caseNumber ?? '').toLowerCase().includes(q) ||
-        String(c.city ?? '').toLowerCase().includes(q) ||
-        String(c.title ?? '').toLowerCase().includes(q)
-      );
-    }
-
-    results = sortPublicCases(results, filters.sort);
-    const total = results.length;
-    const start = (page - 1) * pageSize;
-    const items = results.slice(start, start + pageSize).map(toPublicCase);
-
-    return { items, total, page, pageSize };
-  });
+export function listCases(filters = {}, page = 1, pageSize = 12) {
+  return getCases({ ...filters, page, pageSize });
 }
 
-export async function getCase(caseId) {
-  return withLatency(() => {
-    const c = MOCK_CASES.find(c => c.caseId === caseId);
-    if (!c) throw new Error('Case not found.');
-    if (!PUBLIC_STATUSES.includes(c.caseStatus)) throw new Error('Case not found.');
-    return toPublicCaseDetail(c);
-  });
+export async function getCaseByNumber(caseNumber) {
+  const response = await apiClient.get(`/cases/${encodeURIComponent(caseNumber)}`);
+  return caseView(getResponseData(response));
+}
+
+export async function getCaseUpdates(caseNumber) {
+  const response = await apiClient.get(`/cases/${encodeURIComponent(caseNumber)}/updates`);
+  const updates = getResponseData(response);
+  return (Array.isArray(updates) ? updates : []).map(updateView);
+}
+
+/** Backwards-compatible detail adapter used by CaseDetailPage. */
+export async function getCase(caseNumber) {
+  const [record, updates] = await Promise.all([
+    getCaseByNumber(caseNumber),
+    getCaseUpdates(caseNumber),
+  ]);
+  return { ...record, updates };
 }
 
 export async function getPublicStats() {
   return withLatency(() => {
-    const publicCases = MOCK_CASES.filter(c => PUBLIC_STATUSES.includes(c.caseStatus));
+    const publicCases = MOCK_CASES.filter((item) => PUBLIC_STATUSES.includes(item.caseStatus));
     return {
-      activeCases:   publicCases.filter(c => c.caseStatus === 'open').length,
-      underReview:   publicCases.filter(c => c.caseStatus === 'under_review').length,
-      resolvedCases: publicCases.filter(c => c.caseStatus === 'resolved').length,
-      reportsThisWeek: 4, // mock static
+      activeCases: publicCases.filter((item) => item.caseStatus === 'open').length,
+      underReview: publicCases.filter((item) => item.caseStatus === 'under_review').length,
+      resolvedCases: publicCases.filter((item) => item.caseStatus === 'resolved').length,
+      reportsThisWeek: 4,
     };
   });
 }

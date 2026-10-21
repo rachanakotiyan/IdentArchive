@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import Button from '../../components/ui/Button.jsx';
 import StatusStamp from '../../components/ui/StatusStamp.jsx';
 import { TextField } from '../../components/ui/Fields.jsx';
-import { useAuth } from '../../context/useAuth.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import * as reportService from '../../services/reportService.js';
 import { PublicLayout } from '../../components/layout/PublicLayout.jsx';
@@ -19,9 +18,8 @@ function getDate(date) {
 export default function TrackReportPage() {
   useDocumentTitle('Track a report');
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
   const [referenceNo, setReferenceNo] = useState(searchParams.get('referenceNo') || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [pin, setPin] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,14 +32,14 @@ export default function TrackReportPage() {
     setResult(null);
     setError('');
     setNotFound(false);
-    if (!referenceNo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return;
+    if (!referenceNo.trim() || !pin.trim()) return;
 
     setLoading(true);
     try {
-      const report = await reportService.trackReport({ referenceNo: referenceNo.trim(), email: email.trim() });
+      const report = await reportService.trackReport(referenceNo.trim(), pin.trim());
       setResult(report);
     } catch (requestError) {
-      if (requestError instanceof Error && requestError.message === NOT_FOUND_MESSAGE) {
+      if (requestError?.status === 404 || requestError?.code === 'NOT_FOUND') {
         setNotFound(true);
       } else {
         setError(requestError instanceof Error ? requestError.message : 'Unable to retrieve this report. Please try again.');
@@ -57,7 +55,7 @@ export default function TrackReportPage() {
         <header className="track-page__header">
           <p className="report-page__eyebrow">Private report lookup</p>
           <h1>Track a report</h1>
-          <p>Enter the reference number and the email address used when the report was submitted.</p>
+          <p>Enter the reference number and tracking PIN from your report confirmation.</p>
         </header>
 
         <form className="track-page__form" onSubmit={handleSubmit} noValidate>
@@ -73,14 +71,14 @@ export default function TrackReportPage() {
             required
           />
           <TextField
-            id="track-email"
-            label="Email used on the report"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => { setEmail(event.target.value); setResult(null); setNotFound(false); }}
+            id="track-pin"
+            label="Tracking PIN"
+            type="password"
+            autoComplete="off"
+            value={pin}
+            onChange={(event) => { setPin(event.target.value); setResult(null); setNotFound(false); }}
             onBlur={() => setTouched(true)}
-            error={touched && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? 'Enter a valid email address.' : ''}
+            error={touched && !pin.trim() ? 'Enter the tracking PIN.' : ''}
             required
           />
           {error && <p className="auth-form__error" role="alert">{error}</p>}
