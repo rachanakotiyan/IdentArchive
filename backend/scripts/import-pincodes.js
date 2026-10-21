@@ -1,18 +1,27 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import { getPool } from '../src/config/database.js';
+
+import pool, { closePool } from '../src/config/database.js';
 
 const BATCH_SIZE = 1000;
 
-export async function importPincodes(filePath) {
-  if (!filePath || !fs.existsSync(filePath)) {
-    console.error(`[Error] CSV file not found at: ${filePath}`);
+async function runImport() {
+  // 1. Get CSV file path from CLI argument or default
+  const argPath = process.argv[2] || '../database/data/pincodes.csv';
+  const csvPath = path.isAbsolute(argPath)
+    ? argPath
+    : path.resolve(process.cwd(), argPath);
+
+  console.log(`[Pincode Import] Checking CSV file at: ${csvPath}`);
+
+  if (!fs.existsSync(csvPath)) {
+    console.error(`\n[Error] CSV file not found at: ${csvPath}`);
+    console.error(`Usage: node scripts/import-pincodes.js <path_to_csv_file>\n`);
     process.exit(1);
   }
 
-  const pool = getPool();
-  const fileStream = fs.createReadStream(filePath);
+  const fileStream = fs.createReadStream(csvPath);
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
   let isHeader = true;
@@ -20,7 +29,7 @@ export async function importPincodes(filePath) {
   let totalImported = 0;
   let totalSkipped = 0;
 
-  console.log(`Starting pincode import from ${filePath}...`);
+  console.log('[Pincode Import] Reading CSV rows...');
 
   for await (const line of rl) {
     if (isHeader) {
@@ -30,68 +39,73 @@ export async function importPincodes(filePath) {
 
     if (!line.trim()) continue;
 
-    // Simple CSV parser handling quotes
-    const cols = line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(col => col.replace(/^"\vert{}"$/g, '').trim());
+    // Handle CSV comma splitting inside quotes
+    const cols = line
+      .split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/)
+      .map((col) => col.replace(/^"|"$/g, '').trim());
 
-    if (cols.length < 9) {
+    if (cols.length < 5) {
       totalSkipped++;
       continue;
     }
 
     const [
-      circlename, regionname, divisionname, officename,
-      rawPincode, officetype, delivery, district, statename
+      circlename,
+      regionname,
+      divisionname,
+      officename,
+      rawPincode,
+      officetype,
+      delivery,
+      district,
+      statename,
     ] = cols;
 
-    // Normalize pincode (ensure 6 digits with leading zeros)
-    const pincode = String(rawPincode).padStart(6, '0');
+    // Pad pincode to 6 digits (keeps leading zeros safe)
+    const pincode = String(rawPincode || '').padStart(6, '0');
 
     if (!/^\d{6}$/.test(pincode)) {
       totalSkipped++;
       continue;
     }
 
-    batch.push([pincode, officename, district, statename, stateNameOrCode(statename)]);
+    batch.push([pincode, officename || district || '', district || '', statename || '']);
 
     if (batch.length >= BATCH_SIZE) {
-      const inserted = await insertBatch(pool, batch);
-      totalImported += inserted;
+      const count = await insertBatch(pool, batch);
+      totalImported += count;
       batch = [];
     }
   }
 
   if (batch.length > 0) {
-    const inserted = await insertBatch(pool, batch);
-    totalImported += inserted;
+    const count = await insertBatch(pool, batch);
+    totalImported += count;
   }
 
-  console.log(`\nImport Complete!`);
-  console.log(`- Total Records Processed: ${totalImported + totalSkipped}`);
-  console.log(`- Successfully Imported: ${totalImported}`);
-  console.log(`- Skipped/Invalid Rows: ${totalSkipped}`);
-}
-
-function stateNameOrCode(state) {
-  return state || null;
+  console.log(`\n====================================`);
+  console.log(`Pincode Import Completed!`);
+  console.log(`- Total Records Processed : ${totalImported + totalSkipped}`);
+  console.log(`- Successfully Imported   : ${totalImported}`);
+  console.log(`- Skipped / Invalid Rows : ${totalSkipped}`);
+  console.log(`====================================\n`);
 }
 
 async function insertBatch(pool, batch) {
   if (batch.length === 0) return 0;
-  
-  // Use INSERT IGNORE or ON DUPLICATE KEY UPDATE to handle duplicate entries safely
   const query = `
-    INSERT IGNORE INTO pincodes (pincode, office_name, district, state, state_code)
+    INSERT IGNORE INTO pincodes (pincode, city, district, state)
     VALUES ?
   `;
   const [result] = await pool.query(query, [batch]);
   return result.affectedRows;
 }
 
-// Execution block
-const filePath = process.argv[2] || path.join(process.cwd(), '../data/pincodes.csv');
-importPincodes(filePath)
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('Import failed:', err);
-    process.exit(1);
-  });
+try {
+  await runImport();
+} catch (err) {
+  console.error('[Error] Import failed:', err.code || 'UNKNOWN');
+  process.exitCode = 1;
+} finally {
+  await closePool();
+}
