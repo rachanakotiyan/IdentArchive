@@ -4,9 +4,14 @@ import {
   apiClient,
   apiRequest,
   ApiError,
+  InterceptorManager,
   getApiBaseUrl,
+  getAuthToken,
+  setAuthToken,
   setTokenProvider,
   setUnauthorizedHandler,
+  requestInterceptors,
+  responseInterceptors,
 } from '../src/services/apiClient.js';
 
 // Helper to mock global fetch for a test
@@ -321,3 +326,202 @@ test('apiClient convenience methods (get, post, put, patch, delete)', async () =
     restore();
   }
 });
+
+test('apiClient: direct callable instance invocation', async () => {
+  let capturedUrl = '';
+  const restore = mockFetch(async (url) => {
+    capturedUrl = url;
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  try {
+    const res = await apiClient('/direct-endpoint');
+    assert.equal(capturedUrl, 'http://localhost:3000/api/direct-endpoint');
+    assert.deepEqual(res, { ok: true });
+  } finally {
+    restore();
+  }
+});
+
+test('apiClient: setToken and getToken manage in-memory Bearer token injection', async () => {
+  let capturedHeaders = {};
+  const restore = mockFetch(async (_url, opts) => {
+    capturedHeaders = opts.headers;
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  try {
+    apiClient.setToken('in-memory-token-abc');
+    assert.equal(apiClient.getToken(), 'in-memory-token-abc');
+
+    await apiClient.get('/cases');
+    assert.equal(capturedHeaders['Authorization'], 'Bearer in-memory-token-abc');
+
+    // Clearing token removes Authorization header
+    apiClient.setToken(null);
+    assert.equal(apiClient.getToken(), null);
+
+    await apiClient.get('/cases');
+    assert.equal(capturedHeaders['Authorization'], undefined);
+  } finally {
+    apiClient.setToken(null);
+    restore();
+  }
+});
+
+test('apiClient: automatic token fallback to localStorage and sessionStorage', async () => {
+  let capturedHeaders = {};
+  const restore = mockFetch(async (_url, opts) => {
+    capturedHeaders = opts.headers;
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  // Mock global storage
+  const mockStorage = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => mockStorage.get(key) || null,
+    setItem: (key, val) => mockStorage.set(key, String(val)),
+    removeItem: (key) => mockStorage.delete(key),
+  };
+
+  try {
+    mockStorage.set('ia-token', 'stored-local-jwt');
+    assert.equal(getAuthToken(), 'stored-local-jwt');
+
+    await apiClient.get('/profile');
+    assert.equal(capturedHeaders['Authorization'], 'Bearer stored-local-jwt');
+  } finally {
+    delete globalThis.localStorage;
+    restore();
+  }
+});
+
+test('InterceptorManager: request interceptor transforms configuration', async () => {
+  let capturedHeaders = {};
+  const restore = mockFetch(async (_url, opts) => {
+    capturedHeaders = opts.headers;
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  const interceptorId = apiClient.interceptors.request.use((config) => {
+    config.headers['X-Custom-Client'] = 'IdentArchive-Web';
+    return config;
+  });
+
+  try {
+    await apiClient.get('/ping');
+    assert.equal(capturedHeaders['X-Custom-Client'], 'IdentArchive-Web');
+  } finally {
+    apiClient.interceptors.request.eject(interceptorId);
+    restore();
+  }
+
+  // Verify ejected interceptor no longer runs
+  const restore2 = mockFetch(async (_url, opts) => {
+    capturedHeaders = opts.headers;
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  try {
+    await apiClient.get('/ping');
+    assert.equal(capturedHeaders['X-Custom-Client'], undefined);
+  } finally {
+    restore2();
+  }
+});
+
+test('InterceptorManager: response interceptor transforms payload', async () => {
+  const restore = mockFetch(async () => {
+    return new Response(JSON.stringify({ data: { id: 1, name: 'Alice' } }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  // Unwraps { data: ... }
+  const interceptorId = apiClient.interceptors.response.use((response) => {
+    return response.data;
+  });
+
+  try {
+    const result = await apiClient.get('/user');
+    assert.deepEqual(result, { id: 1, name: 'Alice' });
+  } finally {
+    apiClient.interceptors.response.eject(interceptorId);
+    restore();
+  }
+});
+
+test('unified error interceptor: converts network failure into ApiError with status 0 and NETWORK_ERROR', async () => {
+  const restore = mockFetch(async () => {
+    throw new TypeError('Failed to fetch: Connection refused');
+  });
+
+  try {
+    await assert.rejects(
+      async () => {
+        await apiClient.get('/cases');
+      },
+      (err) => {
+        assert(err instanceof ApiError);
+        assert.equal(err.status, 0);
+        assert.equal(err.code, 'NETWORK_ERROR');
+        assert.match(err.message, /Failed to fetch/);
+        return true;
+      }
+    );
+  } finally {
+    restore();
+  }
+});
+
+test('unified error interceptor: allows custom response error interceptor to handle or rethrow', async () => {
+  const restore = mockFetch(async () => {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Item does not exist' },
+      }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } }
+    );
+  });
+
+  let interceptedError = null;
+  const interceptorId = apiClient.interceptors.response.use(
+    (res) => res,
+    (err) => {
+      interceptedError = err;
+      throw err;
+    }
+  );
+
+  try {
+    await assert.rejects(async () => {
+      await apiClient.get('/missing-item');
+    }, ApiError);
+
+    assert.ok(interceptedError);
+    assert.equal(interceptedError.status, 404);
+    assert.equal(interceptedError.code, 'NOT_FOUND');
+    assert.equal(interceptedError.message, 'Item does not exist');
+  } finally {
+    apiClient.interceptors.response.eject(interceptorId);
+    restore();
+  }
+});
+
