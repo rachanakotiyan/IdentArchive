@@ -14,10 +14,14 @@ export const tokenClaimsSchema = z.object({
     required_error: 'userId is required',
     invalid_type_error: 'userId must be a string',
   }).trim().min(1, 'userId must be a non-empty string'),
+  sub: z.string().trim().min(1).optional(),
   role: z.enum(ALL_ROLES, {
     errorMap: () => ({ message: `role must be one of: ${ALL_ROLES.join(', ')}` }),
   }),
-}).passthrough()
+}).passthrough().refine((claims) => !claims.sub || claims.sub === claims.userId, {
+  path: ['sub'],
+  message: 'sub must match userId',
+})
 
 /**
  * Generate a signed JWT bearer token.

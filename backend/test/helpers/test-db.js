@@ -23,9 +23,9 @@ export const APP_TABLES = Object.freeze([
  * @param {string} dbName
  */
 export function validateTestDbName(dbName) {
-  if (!dbName || !dbName.endsWith('_test')) {
+  if (dbName !== DEFAULT_TEST_DB) {
     throw new Error(
-      `Refusing to run tests against database "${dbName}": DB_TEST_NAME must end with "_test" to protect data.`
+      `Refusing to run tests against database "${dbName}": tests must use "${DEFAULT_TEST_DB}".`
     )
   }
 }

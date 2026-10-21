@@ -51,9 +51,15 @@ export const config = Object.freeze({
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
     port: dbPort,
-    user: process.env.DB_USER || process.env.DB_APP_USER || 'identarchive_app',
-    password: process.env.DB_PASSWORD ?? process.env.DB_APP_PASSWORD ?? '',
-    database: process.env.DB_NAME || 'identarchive',
+    user: nodeEnv === 'test'
+      ? (process.env.DB_MIGRATE_USER || process.env.DB_USER || 'identarchive_migrate')
+      : (process.env.DB_USER || process.env.DB_APP_USER || 'identarchive_app'),
+    password: nodeEnv === 'test'
+      ? (process.env.DB_MIGRATE_PASSWORD ?? process.env.DB_PASSWORD ?? '')
+      : (process.env.DB_PASSWORD ?? process.env.DB_APP_PASSWORD ?? ''),
+    database: nodeEnv === 'test'
+      ? (process.env.DB_TEST_NAME || 'identarchive_test')
+      : (process.env.DB_NAME || 'identarchive'),
   },
 })
 
