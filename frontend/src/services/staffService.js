@@ -10,7 +10,101 @@ import { MOCK_MATCHES } from '../mock/matches.js';
 import { MOCK_OFFICERS } from '../mock/officers.js';
 import { MOCK_USERS }   from '../mock/users.js';
 import { withLatency }  from '../mock/latency.js';
+import apiClient from './apiClient.js';
 import { getCurrentUser } from './authService.js';
+
+function responseData(response) {
+  return response?.data ?? response;
+}
+
+function reportView(report = {}) {
+  return {
+    reportId: report.report_id ?? report.reportId,
+    referenceNo: report.reference_no ?? report.referenceNo,
+    reportType: report.report_type ?? report.reportType,
+    status: report.status,
+    priority: report.priority ?? 'normal',
+    description: report.description ?? '',
+    dateReported: report.event_date ?? report.dateReported ?? report.created_at,
+    createdDate: report.created_at ?? report.createdDate,
+    person: {
+      name: report.person_name ?? report.person?.name ?? null,
+      age: report.age ?? report.person?.age ?? null,
+      gender: report.gender ?? report.person?.gender ?? null,
+    },
+    location: {
+      address: report.location_address ?? report.location?.address ?? null,
+      pincode: report.location_pincode ?? report.location?.pincode ?? null,
+      city: report.location_city ?? report.location?.city ?? null,
+      district: report.location_district ?? report.location?.district ?? null,
+      state: report.location_state ?? report.location?.state ?? null,
+    },
+    assignedOfficer: report.assigned_officer_id
+      ? { officerId: report.assigned_officer_id, name: null }
+      : report.assignedOfficer ?? null,
+    caseId: report.case_id ?? report.caseId ?? null,
+    reviewNote: report.review_note ?? report.reviewNote ?? null,
+    history: report.history ?? [],
+  };
+}
+
+function matchView(match = {}) {
+  const verification = match.latest_verification ?? match.latestVerification;
+  return {
+    matchId: match.match_id ?? match.matchId,
+    similarityScore: Number(match.similarity_score ?? match.similarityScore ?? 0),
+    status: match.status,
+    createdAt: match.created_at ?? match.createdAt,
+    updatedAt: match.updated_at ?? match.updatedAt,
+    missing: {
+      caseId: match.missing_case_id ?? match.missing?.caseId,
+      caseNumber: match.missing_case_number ?? match.missing?.caseNumber,
+      title: match.missing_case_title ?? match.missing?.title,
+      personName: match.missing_person_name ?? match.missing?.personName,
+      age: match.missing_age ?? match.missing?.age,
+      gender: match.missing_gender ?? match.missing?.gender,
+      city: match.missing_city ?? match.missing?.city,
+      district: match.missing_district ?? match.missing?.district,
+      state: match.missing_state ?? match.missing?.state,
+      date: match.missing_event_date ?? match.missing?.date,
+    },
+    found: {
+      caseId: match.found_case_id ?? match.found?.caseId,
+      caseNumber: match.found_case_number ?? match.found?.caseNumber,
+      title: match.found_case_title ?? match.found?.title,
+      personName: match.found_person_name ?? match.found?.personName,
+      age: match.found_age ?? match.found?.age,
+      gender: match.found_gender ?? match.found?.gender,
+      city: match.found_city ?? match.found?.city,
+      district: match.found_district ?? match.found?.district,
+      state: match.found_state ?? match.found?.state,
+      date: match.found_event_date ?? match.found?.date,
+    },
+    verifications: verification
+      ? [{
+          officerName: verification.officer_name ?? verification.officerName,
+          officerBadge: verification.officer_badge ?? verification.officerBadge,
+          decision: verification.decision,
+          remarks: verification.remarks,
+          verificationDate: verification.verification_date ?? verification.verificationDate,
+        }]
+      : match.verifications ?? [],
+  };
+}
+
+async function getReportFromQueue(reportId) {
+  const limit = 100;
+  for (let page = 1; ; page += 1) {
+    const response = await apiClient.get(`/staff/reports?page=${page}&limit=${limit}`);
+    const reports = responseData(response);
+    const report = (Array.isArray(reports) ? reports : []).find(
+      (item) => String(item.report_id ?? item.reportId) === String(reportId),
+    );
+    if (report) return reportView(report);
+    if (!Array.isArray(reports) || reports.length < limit) break;
+  }
+  throw new Error('Report not found or access denied.');
+}
 
 function assertStaff() {
   const user = getCurrentUser();
@@ -163,144 +257,79 @@ export async function getDashboard() {
 }
 
 export async function listReports(filters = {}, page = 1, pageSize = 10) {
-  return withLatency(() => {
-    const user = assertStaff();
-    let results = visibleReports(user);
+  const query = new URLSearchParams({ page: '1', limit: '100' });
+  if (filters.status && filters.status !== 'all') query.set('status', filters.status);
+  const response = await apiClient.get(`/staff/reports?${query}`);
+  let reports = (Array.isArray(responseData(response)) ? responseData(response) : []).map(reportView);
 
-    if (filters.status && filters.status !== 'all') {
-      results = results.filter(r => r.status === filters.status);
-    }
-    if (filters.priority && filters.priority !== 'all') {
-      results = results.filter(r => r.priority === filters.priority);
-    }
-    if (filters.type && filters.type !== 'all') {
-      results = results.filter(r => r.reportType === filters.type);
-    }
-    if (filters.assignedOfficer && filters.assignedOfficer !== 'all') {
-      if (filters.assignedOfficer === 'unassigned') {
-        results = results.filter(r => !r.assignedOfficer);
-      } else {
-        results = results.filter(r => r.assignedOfficer?.officerId === filters.assignedOfficer);
-      }
-    }
-    if (filters.query) {
-      const q = filters.query.toLowerCase().trim();
-      results = results.filter(r =>
-        r.referenceNo.toLowerCase().includes(q) ||
-        (r.person?.name && r.person.name.toLowerCase().includes(q)) ||
-        (r.location?.city && r.location.city.toLowerCase().includes(q))
-      );
-    }
+  if (filters.priority && filters.priority !== 'all') {
+    reports = reports.filter((report) => report.priority === filters.priority);
+  }
+  if (filters.type && filters.type !== 'all') {
+    reports = reports.filter((report) => report.reportType === filters.type);
+  }
+  if (filters.assignedOfficer && filters.assignedOfficer !== 'all') {
+    reports = reports.filter((report) => filters.assignedOfficer === 'unassigned'
+      ? !report.assignedOfficer
+      : report.assignedOfficer?.officerId === filters.assignedOfficer);
+  }
+  if (filters.query) {
+    const search = filters.query.toLowerCase().trim();
+    reports = reports.filter((report) =>
+      [report.referenceNo, report.person?.name, report.location?.city]
+        .some((value) => value?.toLowerCase().includes(search)),
+    );
+  }
 
-    const total = results.length;
-    const start = (page - 1) * pageSize;
-    const items = results.slice(start, start + pageSize);
-    return { items, total, page, pageSize };
-  });
+  const total = reports.length;
+  const start = (page - 1) * pageSize;
+  return { items: reports.slice(start, start + pageSize), total, page, pageSize };
 }
 
 export async function getReport(id) {
-  return withLatency(() => {
-    const user = assertStaff();
-    const visible = visibleReports(user);
-    const r = visible.find(r => r.reportId === id);
-    if (!r) throw new Error('Report not found or access denied.');
-
-    // Ensure linked case number is visible if case exists
-    const linkedCase = r.caseId ? MOCK_CASES.find(c => c.caseId === r.caseId) : null;
-    return {
-      ...r,
-      caseNumber: linkedCase?.caseNumber || r.caseNumber || null,
-    };
-  });
+  return getReportFromQueue(id);
 }
 
 export async function decideReport(id, { action, note }) {
-  return withLatency(() => {
-    assertStaff();
-    const r = MOCK_REPORTS.find(r => r.reportId === id);
-    if (!r) throw new Error('Report not found.');
+  let response;
+  let status;
+  let endpoint;
+  let payload;
+  if (action === 'approve') {
+    endpoint = 'approve';
+    payload = {};
+    status = 'approved';
+  } else if (action === 'reject') {
+    endpoint = 'reject';
+    payload = {
+      rejection_reason: note,
+    };
+    status = 'rejected';
+  } else if (action === 'requestInfo') {
+    endpoint = 'info-request';
+    payload = { note };
+    status = 'info_requested';
+  } else {
+    throw new Error(`Unsupported report action: ${action}`);
+  }
 
-    r.history = r.history || [];
-
-    if (action === 'approve') {
-      r.status = 'approved';
-      if (note) r.reviewNote = note;
-
-      // Ensure a public case exists in MOCK_CASES
-      let existingCase = r.caseId ? MOCK_CASES.find(c => c.caseId === r.caseId) : null;
-      if (existingCase) {
-        existingCase.caseStatus = 'open';
-        r.caseNumber = existingCase.caseNumber;
-      } else {
-        const nextNum = MOCK_CASES.length + 1;
-        const caseNumber = `IA-2026-${String(nextNum).padStart(4, '0')}`;
-        const caseId = `case-${String(nextNum).padStart(3, '0')}`;
-        const newCase = {
-          caseId,
-          caseNumber,
-          title: `${r.reportType === 'missing' ? 'Missing person' : 'Unidentified person'} - ${r.person?.name || r.location?.city || 'Record'}`,
-          crimeType: r.reportType === 'missing' ? 'missing_person' : 'unidentified_person',
-          caseStatus: 'open',
-          kind: r.reportType,
-          personName: r.person?.name || null,
-          age: r.person?.age ?? null,
-          estimatedAge: r.person?.estimatedAge ?? null,
-          gender: r.person?.gender || 'unknown',
-          date: r.person?.date || r.dateReported,
-          shortDescription: r.description ? (r.description.length > 100 ? `${r.description.slice(0, 97)}...` : r.description) : '',
-          city: r.location?.city || '',
-          district: r.location?.district || '',
-          state: r.location?.state || '',
-          description: r.description || '',
-          physicalFeatures: r.person?.physicalFeatures || '',
-          identifyingMarks: r.person?.identifyingMarks || '',
-          heightCm: r.person?.heightCm || null,
-          updates: [
-            { date: new Date().toISOString().slice(0, 10), note: `Case opened upon approval of report ${r.referenceNo}.` }
-          ]
-        };
-        MOCK_CASES.unshift(newCase);
-        r.caseId = caseId;
-        r.caseNumber = caseNumber;
-      }
-
-      r.history.push({
-        date: new Date().toISOString(),
-        event: `Report approved. Case ${r.caseNumber} created.`,
-      });
-      return r;
-    }
-
-    if (action === 'reject') {
-      r.status = 'rejected';
-      r.reviewNote = note;
-      // If any case was linked, remove or ensure it is not open
-      if (r.caseId) {
-        const linkedCase = MOCK_CASES.find(c => c.caseId === r.caseId);
-        if (linkedCase) {
-          linkedCase.caseStatus = 'closed';
-        }
-      }
-      r.history.push({
-        date: new Date().toISOString(),
-        event: `Report rejected. Reason: ${note}`,
-      });
-      return r;
-    }
-
-    if (action === 'requestInfo') {
-      r.status = 'info_requested';
-      r.reviewNote = note;
-      r.history.push({
-        date: new Date().toISOString(),
-        event: `Information requested from reporter: "${note}"`,
-      });
-      return r;
-    }
-
-    return r;
-  });
+  const currentReport = await getReportFromQueue(id);
+  response = await apiClient.post(
+    `/staff/reports/${encodeURIComponent(id)}/${endpoint}`,
+    payload,
+  );
+  const result = responseData(response) ?? {};
+  const caseRecord = result.case ?? {};
+  const updatedReport = result.report ?? (result.status ? result : null);
+  return {
+    ...currentReport,
+    ...(updatedReport ? reportView(updatedReport) : {}),
+    reportId: updatedReport?.report_id ?? updatedReport?.reportId ?? result.report_id ?? id,
+    status: updatedReport?.status ?? status,
+    caseId: caseRecord.case_id ?? caseRecord.caseId ?? currentReport.caseId,
+    caseNumber: caseRecord.case_number ?? caseRecord.caseNumber ?? currentReport.caseNumber ?? null,
+    reviewNote: note ?? currentReport.reviewNote,
+  };
 }
 
 export async function assignOfficer(reportId, officerId) {
@@ -445,78 +474,39 @@ export async function closeCase(id, note) {
 }
 
 export async function listMatches(filters = {}, page = 1, pageSize = 10) {
-  return withLatency(() => {
-    assertStaff();
-    let results = [...MOCK_MATCHES];
-    if (filters.status && filters.status !== 'all') {
-      results = results.filter(m => m.status === filters.status);
-    }
-    if (filters.query) {
-      const q = filters.query.toLowerCase().trim();
-      results = results.filter(m =>
-        m.matchId.toLowerCase().includes(q) ||
-        (m.missing?.personName && m.missing.personName.toLowerCase().includes(q)) ||
-        (m.missing?.caseNumber && m.missing.caseNumber.toLowerCase().includes(q)) ||
-        (m.found?.caseNumber && m.found.caseNumber.toLowerCase().includes(q)) ||
-        (m.found?.city && m.found.city.toLowerCase().includes(q))
-      );
-    }
-    const total = results.length;
-    const start = (page - 1) * pageSize;
-    const items = results.slice(start, start + pageSize);
-    return { items, total, page, pageSize };
-  });
+  const query = new URLSearchParams({ page: '1', limit: '100' });
+  if (filters.status && filters.status !== 'all') query.set('status', filters.status);
+  const response = await apiClient.get(`/staff/matches?${query}`);
+  let matches = (Array.isArray(responseData(response)) ? responseData(response) : []).map(matchView);
+  if (filters.query) {
+    const search = filters.query.toLowerCase().trim();
+    matches = matches.filter((match) =>
+      [
+        match.matchId,
+        match.missing?.personName,
+        match.missing?.caseNumber,
+        match.found?.personName,
+        match.found?.caseNumber,
+        match.found?.city,
+      ].some((value) => value?.toLowerCase().includes(search)),
+    );
+  }
+  const total = matches.length;
+  const start = (page - 1) * pageSize;
+  return { items: matches.slice(start, start + pageSize), total, page, pageSize };
 }
 
 export async function getMatch(id) {
-  return withLatency(() => {
-    assertStaff();
-    const m = MOCK_MATCHES.find(m => m.matchId === id);
-    if (!m) throw new Error('Match not found.');
-    return m;
-  });
+  const response = await apiClient.get(`/staff/matches/${encodeURIComponent(id)}`);
+  return matchView(responseData(response));
 }
 
 export async function reviewMatch(id, { decision, remarks }) {
-  return withLatency(() => {
-    assertStaff();
-    const user = getCurrentUser();
-    const m = MOCK_MATCHES.find(m => m.matchId === id);
-    if (!m) throw new Error('Match not found.');
-
-    m.status = decision; // 'confirmed' or 'dismissed'
-    m.verifications = m.verifications || [];
-    m.verifications.unshift({
-      officerName: user.name,
-      decision,
-      remarks,
-      verificationDate: new Date().toISOString(),
-    });
-
-    // Requirement 3: Confirming updates both persons' statuses in the mock
-    if (decision === 'confirmed') {
-      const missingCase = MOCK_CASES.find(c => c.caseId === m.missing?.caseId || c.caseNumber === m.missing?.caseNumber);
-      if (missingCase) {
-        missingCase.caseStatus = 'resolved';
-        missingCase.updates = missingCase.updates || [];
-        missingCase.updates.push({
-          date: new Date().toISOString().slice(0, 10),
-          note: `Match ${m.matchId} confirmed. Linked with ${m.found?.caseNumber || 'found record'}. Case status resolved.`
-        });
-      }
-      const foundCase = MOCK_CASES.find(c => c.caseId === m.found?.caseId || c.caseNumber === m.found?.caseNumber);
-      if (foundCase) {
-        foundCase.caseStatus = 'resolved';
-        foundCase.updates = foundCase.updates || [];
-        foundCase.updates.push({
-          date: new Date().toISOString().slice(0, 10),
-          note: `Match ${m.matchId} confirmed. Linked with ${m.missing?.caseNumber || 'missing record'}. Case status resolved.`
-        });
-      }
-    }
-
-    return m;
+  const response = await apiClient.post(`/staff/matches/${encodeURIComponent(id)}/verify`, {
+    action: decision,
+    notes: remarks,
   });
+  return matchView(responseData(response));
 }
 
 export async function listOfficers(filters = {}, page = 1, pageSize = 10) {
