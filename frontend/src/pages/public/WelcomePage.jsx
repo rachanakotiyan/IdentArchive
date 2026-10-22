@@ -35,10 +35,6 @@ export default function WelcomePage() {
 
   return (
     <div className="welcome-page">
-      {/* Demo mode notice */}
-      <div className="welcome-page__demo-bar" role="status">
-        DEMO MODE - This is a mock system. No data submitted here is real.
-      </div>
 
       {/* Theme toggle (floating) */}
       <button
