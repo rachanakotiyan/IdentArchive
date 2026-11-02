@@ -77,7 +77,14 @@ describe('End-to-end report-to-case integration flow (Phase 4b to 4c)', { skip: 
     })
     const officerToken = signToken({ userId: officerUserId, role: 'officer' })
 
+    // Seed pincode so the server can derive city/district/state from the pincodes table
+    await connection.execute(
+      "INSERT INTO pincodes (pincode, city, district, state) VALUES ('560038', 'Bengaluru', 'Bengaluru Urban', 'Karnataka')"
+    ).catch(() => {/* ignore duplicate */})
+
     // 3. Reporter submits a missing person report (Phase 4b intake)
+    // Note: location_city/district/state are derived from the pincodes table on the server;
+    // client values are ignored by the new strict zod schema.
     const reportPayload = {
       report_type: 'missing',
       person_name: 'Ananya Sharma',
@@ -90,9 +97,6 @@ describe('End-to-end report-to-case integration flow (Phase 4b to 4c)', { skip: 
       identifying_marks: 'Small scar near right eyebrow.',
       location_address: '100 Feet Road, Indiranagar',
       location_pincode: '560038',
-      location_city: 'Bengaluru',
-      location_district: 'Bengaluru Urban',
-      location_state: 'Karnataka',
     }
 
     const submitRes = await fetch(`${baseUrl}/api/reports`, {
@@ -140,7 +144,7 @@ describe('End-to-end report-to-case integration flow (Phase 4b to 4c)', { skip: 
     assert.equal(approveBody.success, true)
     const createdCase = approveBody.data.case
     assert.ok(createdCase)
-    const { case_number: caseNumber, case_id: caseId } = createdCase
+    const { case_number: caseNumber } = createdCase
     assert.ok(caseNumber)
     assert.match(caseNumber, /^IA-\d{4}-\d{4}$/)
     assert.equal(createdCase.kind, 'missing')
@@ -184,11 +188,12 @@ describe('End-to-end report-to-case integration flow (Phase 4b to 4c)', { skip: 
     assert.equal(detailBody.data.physical_features, 'Wears oval glasses, black shoulder-length hair.')
     assert.equal(detailBody.data.identifying_marks, 'Small scar near right eyebrow.')
 
-    // Verify privacy: reporter info and officer internal notes are never exposed in case details
+    // Verify privacy: reporter info, officer fields, and case_id are never exposed in public case details
     assert.equal('reporter_email' in detailBody.data, false)
     assert.equal('reporter_phone' in detailBody.data, false)
     assert.equal('reporter_name' in detailBody.data, false)
     assert.equal('assigned_officer_id' in detailBody.data, false)
+    assert.equal('case_id' in detailBody.data, false)
 
     // 9. Phase 4c: Check case updates endpoint initially returns empty list
     const initialUpdatesRes = await fetch(`${baseUrl}/api/cases/${encodeURIComponent(caseNumber)}/updates`)
@@ -198,7 +203,14 @@ describe('End-to-end report-to-case integration flow (Phase 4b to 4c)', { skip: 
     assert.equal(Array.isArray(initialUpdatesBody.data), true)
     assert.equal(initialUpdatesBody.data.length, 0)
 
-    // 10. Add milestone update and verify retrieval via GET /api/cases/:caseNumber/updates
+    // 10. Add milestone update using the internal case_id (from DB directly, not from public API)
+    const [caseRows] = await connection.execute(
+      'SELECT case_id FROM cases WHERE case_number = ? LIMIT 1',
+      [caseNumber]
+    )
+    const caseId = caseRows[0]?.case_id
+    assert.ok(caseId, 'case_id must be fetchable from DB for update insertion')
+
     await connection.execute(
       'INSERT INTO case_updates (case_id, update_date, note) VALUES (?, ?, ?)',
       [caseId, '2026-02-15', 'Search operations initiated across Indiranagar Metro CCTV feeds.']
@@ -210,6 +222,7 @@ describe('End-to-end report-to-case integration flow (Phase 4b to 4c)', { skip: 
     assert.equal(updatedBody.success, true)
     assert.equal(updatedBody.data.length, 1)
     assert.equal(updatedBody.data[0].note, 'Search operations initiated across Indiranagar Metro CCTV feeds.')
-    assert.equal(updatedBody.data[0].case_id, caseId)
+    // case_id must not be in public updates
+    assert.equal('case_id' in updatedBody.data[0], false)
   })
 })

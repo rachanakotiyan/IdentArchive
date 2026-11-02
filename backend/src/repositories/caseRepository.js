@@ -1,10 +1,17 @@
 import pool from '../config/database.js'
 
 /**
+ * The only case_status values that are allowed on the public API.
+ * Any other status (e.g. 'closed') must never appear in public responses.
+ */
+export const PUBLIC_STATUSES = ['open', 'under_review', 'resolved']
+
+/**
  * Standard public case fields to select from the `cases` table.
+ * Must NOT include reporter_*, assigned_officer_id, review_note, or any
+ * other field that the schema docs flag as internal-only.
  */
 export const CASE_FIELDS = `
-  c.case_id,
   c.case_number,
   c.title,
   c.crime_type,
@@ -29,6 +36,8 @@ export const CASE_FIELDS = `
 
 /**
  * Search and filter cases using parameterized MySQL queries with pagination.
+ * Only cases with a public status (open / under_review / resolved) are ever returned.
+ * If the caller requests a non-public status (e.g. 'closed') the result is an empty list.
  *
  * @param {object} [filters={}]
  * @param {string} [filters.case_type] - Matches kind ('missing'/'found') or crime_type (e.g. 'missing_person')
@@ -39,10 +48,11 @@ export const CASE_FIELDS = `
  * @param {number|string} [filters.age_min] - Minimum age
  * @param {number|string} [filters.age_max] - Maximum age
  * @param {string} [filters.query]     - Free text search across title, name, description, city, case number
+ * @param {string} [filters.case_status] - Restrict to one of the public statuses; non-public → empty list
  * @param {number} [filters.page=1]    - 1-based page number
  * @param {number} [filters.limit=20]  - Results per page (max 100)
  * @param {import('mysql2/promise').Connection|null} [conn=null] - Optional connection for transactions
- * @returns {Promise<Array<object>&{ total: number, page: number, limit: number, totalPages: number, cases: Array<object> }>}
+ * @returns {Promise<Array<object>&{ total: number, page: number, limit: number, totalPages: number }>}
  */
 export async function searchCases(
   {
@@ -74,8 +84,37 @@ export async function searchCases(
   const safeLimit = Math.min(100, Math.max(1, Math.trunc(Number(limit ?? pageSize) || 20)))
   const offset = (safePage - 1) * safeLimit
 
+  // Resolve the requested status filter
+  const requestedStatus = (case_status ?? caseStatus ?? status)
+  const requestedStatusNorm = requestedStatus !== undefined && requestedStatus !== null && String(requestedStatus).trim() !== ''
+    ? String(requestedStatus).trim().toLowerCase()
+    : null
+
+  // If the caller asked for a non-public status, return an empty list immediately.
+  if (requestedStatusNorm !== null && !PUBLIC_STATUSES.includes(requestedStatusNorm)) {
+    const empty = []
+    empty.total = 0
+    empty.page = safePage
+    empty.limit = safeLimit
+    empty.totalPages = 1
+    empty.cases = empty
+    empty.items = empty
+    return empty
+  }
+
   const where = []
   const params = []
+
+  // ALWAYS restrict to public statuses.
+  if (requestedStatusNorm !== null) {
+    // Caller filtered to a specific public status
+    where.push('c.case_status = ?')
+    params.push(requestedStatusNorm)
+  } else {
+    // Default: all public statuses
+    where.push(`c.case_status IN (${PUBLIC_STATUSES.map(() => '?').join(', ')})`)
+    params.push(...PUBLIC_STATUSES)
+  }
 
   // Filter: case_type (supports both kind: 'missing'/'found' and crime_type: 'missing_person'/etc.)
   const typeFilter = case_type ?? caseType
@@ -89,13 +128,6 @@ export async function searchCases(
   if (kind !== undefined && kind !== null && String(kind).trim() !== '' && !typeFilter) {
     where.push('LOWER(c.kind) = ?')
     params.push(String(kind).trim().toLowerCase())
-  }
-
-  // Filter: case_status / status (e.g. 'open', 'under_review', 'resolved', 'closed')
-  const statusFilter = case_status ?? caseStatus ?? status
-  if (statusFilter !== undefined && statusFilter !== null && String(statusFilter).trim() !== '') {
-    where.push('LOWER(c.case_status) = ?')
-    params.push(String(statusFilter).trim().toLowerCase())
   }
 
   // Filter: gender
@@ -203,7 +235,9 @@ export async function searchCases(
 }
 
 /**
- * Retrieve a case row by its unique case number (or case ID).
+ * Retrieve a public case row by its unique case_number.
+ * Returns null if the case does not exist or has a non-public status (e.g. 'closed').
+ * Only looks up by case_number (never by internal case_id).
  *
  * @param {string} caseNumber
  * @param {import('mysql2/promise').Connection|null} [conn=null]
@@ -220,25 +254,27 @@ export async function getCaseByNumber(caseNumber, conn = null) {
   const [rows] = await executor.execute(
     `SELECT ${CASE_FIELDS}
      FROM cases c
-     WHERE c.case_number = ? OR c.case_id = ?
+     WHERE c.case_number = ?
+       AND c.case_status IN (${PUBLIC_STATUSES.map(() => '?').join(', ')})
      LIMIT 1`,
-    [cleanNumber, cleanNumber]
+    [cleanNumber, ...PUBLIC_STATUSES]
   )
 
   return rows[0] || null
 }
 
 /**
- * Retrieve public updates/milestones for a case given its case number (or case ID).
- * Uses a parameterized query against `cases` and `case_updates` tables.
+ * Retrieve public updates/milestones for a case given its case_number.
+ * The parent case must exist and have a public status; otherwise returns null
+ * (the controller should 404 in that situation).
  *
  * @param {string} caseNumber
  * @param {import('mysql2/promise').Connection|null} [conn=null]
- * @returns {Promise<Array<object>>}
+ * @returns {Promise<Array<object>|null>} null if parent case not found/not public
  */
 export async function getCaseUpdates(caseNumber, conn = null) {
   if (!caseNumber || String(caseNumber).trim() === '') {
-    return []
+    return null
   }
 
   const executor = conn || pool
@@ -246,18 +282,19 @@ export async function getCaseUpdates(caseNumber, conn = null) {
 
   const [rows] = await executor.execute(
     `SELECT
-       u.id,
-       u.case_id,
        u.update_date,
        u.update_date AS date,
        u.note,
        u.created_at
      FROM case_updates u
      JOIN cases c ON c.case_id = u.case_id
-     WHERE c.case_number = ? OR c.case_id = ?
+     WHERE c.case_number = ?
+       AND c.case_status IN (${PUBLIC_STATUSES.map(() => '?').join(', ')})
      ORDER BY u.update_date ASC, u.created_at ASC`,
-    [cleanNumber, cleanNumber]
+    [cleanNumber, ...PUBLIC_STATUSES]
   )
 
   return rows
 }
+
+

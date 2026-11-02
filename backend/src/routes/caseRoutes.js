@@ -4,12 +4,13 @@ import {
   getCaseByNumber,
   getCaseUpdates,
 } from '../controllers/caseController.js'
+import { casesLimiter } from '../middleware/rateLimiters.js'
 
 const router = Router()
 
-// Public endpoints
-router.get('/', getCases)
-router.get('/:caseNumber', getCaseByNumber)
-router.get('/:caseNumber/updates', getCaseUpdates)
+// Public endpoints (rate-limited)
+router.get('/', casesLimiter, getCases)
+router.get('/:caseNumber', casesLimiter, getCaseByNumber)
+router.get('/:caseNumber/updates', casesLimiter, getCaseUpdates)
 
 export default router

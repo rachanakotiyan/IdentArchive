@@ -2,6 +2,10 @@ import crypto from 'node:crypto'
 import pool from '../config/database.js'
 import { AppError } from '../utils/errors.js'
 
+/**
+ * Fields that are safe to return to the authenticated owner (GET /api/reports/me).
+ * Never includes reporter_email, reporter_phone, or assigned_officer_id.
+ */
 const REPORT_FIELDS = `
   report_id, reference_no, report_type, status, person_name, age, gender,
   description, event_date, location_address, location_pincode, location_city,
@@ -31,6 +35,12 @@ export async function createReport(reportData, userId) {
     const reporterName = reportData.reporter_name || reporter.name
     const reporterPhone = reportData.reporter_phone || reportData.contact_phone || reporter.phone
     const reporterEmail = reportData.reporter_email || reportData.contact_email || reporter.email
+
+    // location_city/district/state are derived from pincodes table in the controller
+    const locationCity = reportData.location_city
+    const locationDistrict = reportData.location_district
+    const locationState = reportData.location_state
+
     const required = [
       reportType,
       reporterName,
@@ -41,9 +51,9 @@ export async function createReport(reportData, userId) {
       reportData.event_date,
       reportData.location_address,
       reportData.location_pincode,
-      reportData.location_city,
-      reportData.location_district,
-      reportData.location_state,
+      locationCity,
+      locationDistrict,
+      locationState,
     ]
     if (required.some((value) => value === undefined || value === null || String(value).trim() === '')) {
       throw new AppError('Missing required report fields.', 400, 'VALIDATION_ERROR')
@@ -81,9 +91,9 @@ export async function createReport(reportData, userId) {
         reportData.event_date,
         reportData.location_address,
         reportData.location_pincode,
-        reportData.location_city,
-        reportData.location_district,
-        reportData.location_state,
+        locationCity,
+        locationDistrict,
+        locationState,
       ]
     )
 
@@ -122,13 +132,55 @@ export async function getReportsByUserId(userId) {
   return rows
 }
 
+/**
+ * Retrieve a report by reference number + reporter email for the public tracking endpoint.
+ * Returns public-safe fields plus a status_history list.
+ * History items expose event + created_at but never actor names or review_notes
+ * (except the note text if status is info_requested).
+ *
+ * @param {string} referenceNo
+ * @param {string} email
+ * @returns {Promise<object|null>}
+ */
 export async function getReportByRefAndEmail(referenceNo, email) {
   const [rows] = await pool.execute(
     `SELECT reference_no, report_type, status, person_name, age, gender,
             description, event_date, location_city, location_district, location_state,
-            created_at, updated_at
+            review_note, created_at, updated_at
      FROM reports WHERE reference_no = ? AND reporter_email = ? LIMIT 1`,
-    [referenceNo, String(email).trim().toLowerCase()]
+    [String(referenceNo).trim(), String(email).trim().toLowerCase()]
   )
-  return rows[0] || null
+  const report = rows[0]
+  if (!report) return null
+
+  // Fetch status history (no actor names)
+  const [historyRows] = await pool.execute(
+    'SELECT event, created_at AS date FROM report_history WHERE report_id IN (SELECT report_id FROM reports WHERE reference_no = ?) ORDER BY id ASC',
+    [String(referenceNo).trim()]
+  )
+
+  // Build public response – strip review_note unless status is info_requested
+  const publicReport = {
+    reference_no: report.reference_no,
+    report_type: report.report_type,
+    status: report.status,
+    person_name: report.person_name,
+    age: report.age,
+    gender: report.gender,
+    description: report.description,
+    event_date: report.event_date,
+    location_city: report.location_city,
+    location_district: report.location_district,
+    location_state: report.location_state,
+    created_at: report.created_at,
+    updated_at: report.updated_at,
+    status_history: historyRows.map((h) => ({ event: h.event, date: h.date })),
+  }
+
+  // Include the info-request note only when status is info_requested
+  if (report.status === 'info_requested' && report.review_note) {
+    publicReport.info_request_note = report.review_note
+  }
+
+  return publicReport
 }

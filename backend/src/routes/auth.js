@@ -2,6 +2,7 @@ import { Router } from 'express'
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import { authenticate } from '../middleware/authenticate.js'
 import * as authController from '../controllers/authController.js'
+import { registerLimiter } from '../middleware/rateLimiters.js'
 
 const router = Router()
 
@@ -31,7 +32,7 @@ const loginLimiter = rateLimit({
 })
 
 // Public routes
-router.post('/register', authController.register)
+router.post('/register', registerLimiter, authController.register)
 router.post('/login', loginLimiter, authController.login)
 
 // Authenticated routes

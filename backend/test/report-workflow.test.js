@@ -61,6 +61,11 @@ describe('Phase 4b report workflows', { skip: skipReason }, () => {
     await createUser(connection, { userId, email, phone: '9876543210' })
     const token = signToken({ userId, role: 'individual' })
 
+    // Seed pincode so the server can derive location from it
+    await connection.execute(
+      "INSERT INTO pincodes (pincode, city, district, state) VALUES ('560001', 'Bengaluru', 'Bengaluru Urban', 'Karnataka')"
+    ).catch(() => {/* ignore duplicate */})
+
     const response = await fetch(`${baseUrl}/api/reports`, {
       method: 'POST',
       headers: {
@@ -72,12 +77,9 @@ describe('Phase 4b report workflows', { skip: skipReason }, () => {
         person_name: 'Test Person',
         gender: 'unknown',
         event_date: '2026-01-15',
-        description: 'Test report details.',
+        description: 'Test report details – at least 10 chars.',
         location_address: '10 Test Road',
         location_pincode: '560001',
-        location_city: 'Bengaluru',
-        location_district: 'Bengaluru Urban',
-        location_state: 'Karnataka',
       }),
     })
     assert.equal(response.status, 201)
@@ -89,9 +91,12 @@ describe('Phase 4b report workflows', { skip: skipReason }, () => {
     assert.equal('reporter_email' in result.data, false)
     assert.equal('assigned_officer_id' in result.data, false)
 
-    const trackResponse = await fetch(
-      `${baseUrl}/api/reports/track/${encodeURIComponent(referenceNo)}?email=${encodeURIComponent(email)}`
-    )
+    // Tracking is now POST with { reference_no, email } in the body (never in URL)
+    const trackResponse = await fetch(`${baseUrl}/api/reports/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reference_no: referenceNo, email }),
+    })
     assert.equal(trackResponse.status, 200)
     const tracked = await trackResponse.json()
     assert.equal(tracked.data.reference_no, referenceNo)
