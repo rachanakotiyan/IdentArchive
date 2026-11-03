@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import { AppError } from '../utils/errors.js'
 
 const isTest = process.env.NODE_ENV === 'test'
@@ -80,7 +80,7 @@ export const trackLimiter = makeRateLimiter({
 export const submitReportLimiter = makeRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
-  keyGenerator: (req) => req.user?.userId ?? req.ip,
+  keyGenerator: (req) => req.user?.userId ?? ipKeyGenerator(req.ip),
   message: {
     success: false,
     error: {

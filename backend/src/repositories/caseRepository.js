@@ -274,7 +274,7 @@ export async function getCaseByNumber(caseNumber, conn = null) {
  */
 export async function getCaseUpdates(caseNumber, conn = null) {
   if (!caseNumber || String(caseNumber).trim() === '') {
-    return null
+    return []
   }
 
   const executor = conn || pool

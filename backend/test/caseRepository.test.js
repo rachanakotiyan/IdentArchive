@@ -235,6 +235,27 @@ describe('caseRepository tests', { skip: skipReason }, () => {
       assert.equal(byCity.length, 1)
       assert.equal(byCity[0].case_number, 'IA-2026-SRCH1')
     })
+
+    it('excludes closed cases from public search results and returns empty for status=closed', async () => {
+      await createCase(connection, {
+        caseNumber: 'IA-2026-OPEN1',
+        title: 'Active Open Case',
+        caseStatus: 'open',
+      })
+      await createCase(connection, {
+        caseNumber: 'IA-2026-CLOSED9',
+        title: 'Resolved Closed Case',
+        caseStatus: 'closed',
+      })
+
+      const allPublic = await searchCases({}, connection)
+      assert.equal(allPublic.length, 1)
+      assert.equal(allPublic[0].case_number, 'IA-2026-OPEN1')
+
+      const closedExplicit = await searchCases({ case_status: 'closed' }, connection)
+      assert.equal(closedExplicit.length, 0)
+      assert.equal(closedExplicit.total, 0)
+    })
   })
 
   describe('getCaseByNumber', () => {
@@ -254,12 +275,12 @@ describe('caseRepository tests', { skip: skipReason }, () => {
       const found = await getCaseByNumber('IA-2026-TARGET1', connection)
       assert.ok(found)
       assert.equal(found.case_number, 'IA-2026-TARGET1')
-      assert.equal(found.case_id, created.case_id)
+      assert.equal(found.case_id, undefined)
       assert.equal(found.title, 'Target Case Retrieval')
       assert.equal(found.city, 'Chennai')
     })
 
-    it('retrieves an existing case by case_id (UUID)', async () => {
+    it('refuses lookup by case_id UUID (lookup by case_number only)', async () => {
       const caseId = crypto.randomUUID()
       await createCase(connection, {
         caseId,
@@ -268,9 +289,18 @@ describe('caseRepository tests', { skip: skipReason }, () => {
       })
 
       const found = await getCaseByNumber(caseId, connection)
-      assert.ok(found)
-      assert.equal(found.case_number, 'IA-2026-UUID1')
-      assert.equal(found.case_id, caseId)
+      assert.equal(found, null)
+    })
+
+    it('hides closed cases from getCaseByNumber', async () => {
+      await createCase(connection, {
+        caseNumber: 'IA-2026-CLOSED1',
+        title: 'Closed Case',
+        caseStatus: 'closed',
+      })
+
+      const found = await getCaseByNumber('IA-2026-CLOSED1', connection)
+      assert.equal(found, null)
     })
   })
 
@@ -308,9 +338,25 @@ describe('caseRepository tests', { skip: skipReason }, () => {
       assert.equal(updates[1].note, 'Second update: Search team dispatched')
       assert.equal(updates[2].note, 'Third update: Lead verified')
 
-      // Also verify looking up by case_id
+      // Lookup by UUID does not match (lookup is by case_number only)
       const updatesById = await getCaseUpdates(created.case_id, connection)
-      assert.equal(updatesById.length, 3)
+      assert.equal(updatesById.length, 0)
+    })
+
+    it('returns empty array for updates of a closed case', async () => {
+      const created = await createCase(connection, {
+        caseNumber: 'IA-2026-CLOSED2',
+        title: 'Closed Case With Updates',
+        caseStatus: 'closed',
+      })
+
+      await connection.execute(
+        'INSERT INTO case_updates (case_id, update_date, note) VALUES (?, ?, ?)',
+        [created.case_id, '2026-02-01', 'Old update']
+      )
+
+      const updates = await getCaseUpdates('IA-2026-CLOSED2', connection)
+      assert.deepEqual(updates, [])
     })
   })
 })
