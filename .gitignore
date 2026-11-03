@@ -3,3 +3,9 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Demo seed artifacts
+demo-credentials.csv
+demo-manifest.json
+backend/demo-credentials.csv
+backend/demo-manifest.json

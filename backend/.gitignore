@@ -36,3 +36,7 @@ logs/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Demo seed artifacts
+demo-credentials.csv
+demo-manifest.json
