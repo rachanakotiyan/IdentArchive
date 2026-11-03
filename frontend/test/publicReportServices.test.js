@@ -71,7 +71,7 @@ test('report services submit, list, and track via the live API', async () => {
   const calls = [];
   const restore = mockFetch(async (url, options) => {
     calls.push({ url, options });
-    if (url.includes('/track/')) {
+    if (url.endsWith('/reports/track')) {
       return jsonResponse({
         reference_no: 'REF-20261021-000001',
         report_type: 'missing',
@@ -113,13 +113,55 @@ test('report services submit, list, and track via the live API', async () => {
     assert.equal(mine[0].reportId, 'report-id');
     assert.equal(calls[1].url, 'http://localhost:3000/api/reports/me');
 
-    const tracked = await reportService.trackReport('REF/2026?21', 'pin value');
+    const tracked = await reportService.trackReport('REF-20261021-000001', 'reporter@example.test');
     assert.equal(tracked.referenceNo, 'REF-20261021-000001');
     assert.equal(tracked.statusLabel, 'Received');
-    assert.equal(
-      calls[2].url,
-      'http://localhost:3000/api/reports/track/REF%2F2026%3F21?pin=pin%20value',
-    );
+    assert.equal(calls[2].url, 'http://localhost:3000/api/reports/track');
+    assert.equal(calls[2].options.method, 'POST');
+    assert.deepEqual(JSON.parse(calls[2].options.body), {
+      reference_no: 'REF-20261021-000001',
+      email: 'reporter@example.test',
+    });
+  } finally {
+    restore();
+  }
+});
+
+test('public services getPublicStats and getPinInfo fetch from live endpoints and map correctly', async () => {
+  const calls = [];
+  const restore = mockFetch(async (url) => {
+    calls.push(url);
+    if (url.includes('/public/stats')) {
+      return jsonResponse({
+        total_missing: 15,
+        total_unidentified: 8,
+        total_resolved: 42,
+        active_cases: 23,
+      });
+    }
+    if (url.includes('/pincodes/560001')) {
+      return jsonResponse({
+        pincode: '560001',
+        city: 'Bengaluru',
+        district: 'Bengaluru Urban',
+        state: 'Karnataka',
+      });
+    }
+    return jsonResponse({});
+  });
+
+  try {
+    const stats = await publicService.getPublicStats();
+    assert.equal(stats.totalMissing, 15);
+    assert.equal(stats.totalUnidentified, 8);
+    assert.equal(stats.totalResolved, 42);
+    assert.equal(calls[0], 'http://localhost:3000/api/public/stats');
+
+    const pin = await publicService.getPinInfo('560001');
+    assert.equal(pin.pincode, '560001');
+    assert.equal(pin.city, 'Bengaluru');
+    assert.equal(pin.state, 'Karnataka');
+    assert.equal(calls[1], 'http://localhost:3000/api/pincodes/560001');
   } finally {
     restore();
   }

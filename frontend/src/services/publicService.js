@@ -103,7 +103,16 @@ export async function getCase(caseNumber) {
 
 export async function getPublicStats() {
   const response = await apiClient.get('/public/stats');
-  return getResponseData(response);
+  const data = getResponseData(response) || {};
+  return {
+    activeCases: data.activeCases ?? data.active_cases ?? 0,
+    underReview: data.underReview ?? data.under_review ?? 0,
+    resolvedCases: data.resolvedCases ?? data.resolved_cases ?? data.total_resolved ?? 0,
+    reportsThisWeek: data.reportsThisWeek ?? data.reports_this_week ?? 0,
+    totalMissing: data.totalMissing ?? data.total_missing ?? 0,
+    totalUnidentified: data.totalUnidentified ?? data.total_unidentified ?? 0,
+    totalResolved: data.totalResolved ?? data.total_resolved ?? data.resolvedCases ?? 0,
+  };
 }
 
 export async function getPinInfo(pincode) {

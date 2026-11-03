@@ -157,7 +157,9 @@ function staffCaseView(c = {}) {
     state: c.state,
     reportId: c.report_id ?? c.reportId,
     reportReferenceNo: c.report_reference_no ?? c.reportReferenceNo,
+    linkedReportRef: c.linked_report_ref ?? c.linkedReportRef ?? c.report_reference_no ?? c.reportReferenceNo ?? null,
     assignedOfficer,
+    officer: assignedOfficer,
     updates,
     internalNotes,
     matches: (c.matches ?? []).map(matchView),
@@ -169,9 +171,11 @@ function officerView(o = {}) {
   return {
     officerId: o.officer_id ?? o.officerId,
     userId: o.user_id ?? o.userId,
-    name: o.name,
+    name: o.name ?? o.full_name,
+    fullName: o.full_name ?? o.name,
     email: o.email,
-    badge: o.badge,
+    badge: o.badge ?? o.badge_number,
+    badgeNumber: o.badge_number ?? o.badge,
     district: o.district,
     active: o.active !== undefined ? Boolean(o.active) : true,
     workload: Number(o.workload ?? 0),
@@ -181,10 +185,12 @@ function officerView(o = {}) {
 function userView(u = {}) {
   return {
     userId: u.user_id ?? u.userId,
-    name: u.name,
+    name: u.name ?? u.full_name,
+    fullName: u.full_name ?? u.name,
     email: u.email,
     phone: u.phone ?? null,
     role: u.role,
+    emailVerified: u.email_verified ?? u.emailVerified ?? false,
     createdAt: u.created_at ?? u.createdAt,
   };
 }
@@ -283,23 +289,40 @@ export async function getDashboard() {
     // Gracefully handle queue fetch errors while keeping dashboard statistics
   }
 
+  const casesStatus = data.casesByStatus || data.cases_by_status || {};
+  const reportsStatus = data.reportsByStatus || data.reports_by_status || {};
+  const activeCases = Number(
+    data.activeCases
+      ?? data.active_cases
+      ?? ((Number(casesStatus.open ?? 0)) + (Number(casesStatus.under_review ?? 0))),
+  );
+  const pendingMatches = Number(data.pendingMatches ?? data.pending_matches ?? 0);
+  const awaitingReview = Number(data.awaitingReview ?? data.awaiting_review ?? reportsStatus.submitted ?? 0);
+  const totalCases = Number(data.totalCases ?? data.total_cases ?? 0);
+
   return {
     actionQueue,
-    awaitingReview: data.awaitingReview ?? 0,
-    infoRequested: data.infoRequested ?? 0,
-    unassigned: data.unassigned ?? 0,
-    pendingMatches: data.pendingMatches ?? 0,
-    totalCases: data.totalCases ?? 0,
-    resolvedCases: data.resolvedCases ?? 0,
+    kpis: {
+      activeCases,
+      pendingMatches,
+      awaitingReview,
+      totalCases,
+    },
+    awaitingReview,
+    infoRequested: Number(data.infoRequested ?? data.info_requested ?? reportsStatus.info_requested ?? 0),
+    unassigned: Number(data.unassigned ?? 0),
+    pendingMatches,
+    totalCases,
+    resolvedCases: Number(data.resolvedCases ?? data.resolved_cases ?? casesStatus.resolved ?? 0),
     casesByStatus: data.casesByStatusList ?? [
-      { status: 'Open', count: data.casesByStatus?.open ?? 0, color: 'var(--accent)' },
-      { status: 'Under Review', count: data.casesByStatus?.under_review ?? 0, color: 'var(--warning)' },
-      { status: 'Resolved', count: data.casesByStatus?.resolved ?? 0, color: 'var(--success)' },
-      { status: 'Closed', count: data.casesByStatus?.closed ?? 0, color: 'var(--muted)' },
+      { status: 'Open', count: Number(casesStatus.open ?? 0), color: 'var(--accent)' },
+      { status: 'Under Review', count: Number(casesStatus.under_review ?? 0), color: 'var(--warning)' },
+      { status: 'Resolved', count: Number(casesStatus.resolved ?? 0), color: 'var(--success)' },
+      { status: 'Closed', count: Number(casesStatus.closed ?? 0), color: 'var(--muted)' },
     ],
-    reportsOverTime: data.reportsOverTime ?? data.reportsPerWeek ?? [],
-    myItems: data.myItems,
-    recentActivity: data.recentActivity ?? [],
+    reportsOverTime: data.reportsOverTime ?? data.reportsPerWeek ?? data.reports_per_week ?? [],
+    myItems: data.myItems ?? data.my_items,
+    recentActivity: data.recentActivity ?? data.recent_activity ?? [],
   };
 }
 
