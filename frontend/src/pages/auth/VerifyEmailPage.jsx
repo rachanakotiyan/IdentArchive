@@ -49,7 +49,7 @@ export default function VerifyEmailPage() {
           onChange={(event) => setToken(event.target.value)}
           required
         />
-        <Button type="submit" className="auth-form__submit" loading={loading}>
+        <Button type="submit" className="auth-form__submit" loading={loading} disabled={loading}>
           {loading ? 'Verifying…' : 'Verify email'}
         </Button>
       </form>

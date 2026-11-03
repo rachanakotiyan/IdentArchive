@@ -4,14 +4,10 @@ import {
   apiClient,
   apiRequest,
   ApiError,
-  InterceptorManager,
   getApiBaseUrl,
   getAuthToken,
-  setAuthToken,
   setTokenProvider,
   setUnauthorizedHandler,
-  requestInterceptors,
-  responseInterceptors,
 } from '../src/services/apiClient.js';
 
 // Helper to mock global fetch for a test

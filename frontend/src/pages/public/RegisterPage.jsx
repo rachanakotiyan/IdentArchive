@@ -136,7 +136,7 @@ export default function RegisterPage() {
           onChange={updateField('confirmPassword')}
           error={fieldError('confirmPassword')}
         />
-        <Button type="submit" className="auth-form__submit" loading={loading}>
+        <Button type="submit" className="auth-form__submit" loading={loading} disabled={loading}>
           {loading ? 'Creating account…' : 'Register'}
         </Button>
       </form>

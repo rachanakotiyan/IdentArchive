@@ -5,7 +5,6 @@ import AuthShell from '../../components/auth/AuthShell.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { TextField } from '../../components/ui/Fields.jsx';
 import { useAuth } from '../../context/useAuth.js';
-import { DEMO_ACCOUNTS } from '../../mock/users.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 
 function getErrorMessage(error) {
@@ -21,12 +20,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const fillDemoAccount = (account) => {
-    setEmail(account.email);
-    setPassword(account.password);
-    setError('');
-  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -72,37 +65,10 @@ export default function LoginPage() {
           <Link to="/forgot-password">Forgot password?</Link>
           <Link to="/register">Create an account</Link>
         </div>
-        <Button type="submit" className="auth-form__submit" loading={loading}>
+        <Button type="submit" className="auth-form__submit" loading={loading} disabled={loading}>
           {loading ? 'Logging in…' : 'Log in'}
         </Button>
       </form>
-
-      <section className="demo-accounts" aria-labelledby="demo-accounts-title">
-        <div className="demo-accounts__header">
-          <h2 id="demo-accounts-title">Demo accounts</h2>
-          <p>Mock data only, not real credentials.</p>
-        </div>
-        <div className="demo-accounts__list">
-          {DEMO_ACCOUNTS.map((account) => (
-            <div className="demo-accounts__item" key={account.email}>
-              <div className="demo-accounts__identity">
-                <strong>{account.label}</strong>
-                <span>{account.email}</span>
-                <span className="demo-accounts__credential">Password: {account.password}</span>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={loading}
-                onClick={() => fillDemoAccount(account)}
-              >
-                Use this account
-              </Button>
-            </div>
-          ))}
-        </div>
-      </section>
     </AuthShell>
   );
 }

@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
         />
-        <Button type="submit" className="auth-form__submit" loading={loading}>
+        <Button type="submit" className="auth-form__submit" loading={loading} disabled={loading}>
           {loading ? 'Resetting…' : 'Reset password'}
         </Button>
       </form>

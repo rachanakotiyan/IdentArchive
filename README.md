@@ -1,10 +1,26 @@
 # IdentArchive
 
-IdentArchive is a mock-first case management frontend for missing and unidentified person records. The repository currently includes the frontend app and supporting project files for local UI development.
+IdentArchive is a case management platform for missing and unidentified person records. The repository includes the full-stack system: React frontend, Express/Node.js backend, and MySQL database migrations.
 
-## Frontend
+## Getting Started
 
-Run the frontend from the repository root:
+### Prerequisites
+
+- Node.js (v18+)
+- MySQL (v8.0+)
+
+### Backend Setup
+
+```powershell
+cd backend
+npm install
+npm run migrate
+npm run dev
+```
+
+The backend server runs on `http://localhost:3000` by default. See `docs/API.md` for endpoint documentation.
+
+### Frontend Setup
 
 ```powershell
 cd frontend
@@ -12,29 +28,30 @@ npm install
 npm run dev
 ```
 
-The app runs at the local Vite URL shown in the terminal, usually `http://localhost:5173`.
+The application runs at the local Vite URL shown in the terminal, typically `http://localhost:5173`.
 
-## Project structure
+### Environment Configuration
+
+The frontend connects to the backend API using `VITE_API_BASE_URL`:
+
+- Variable: `VITE_API_BASE_URL`
+- Default fallback (development): `http://localhost:3000/api`
+- File: `frontend/.env` (see `frontend/.env.example`)
+
+## Repository Structure
 
 ```text
 .
-├── frontend/
-│   ├── src/
-│   ├── package.json
-│   └── README.md
-├── backend/
-├── database/
-├── docs/
-├── README.md
-└── package.json
+├── frontend/        # React + Vite client application
+├── backend/         # Express REST API server
+├── database/        # MySQL migrations and seed scripts
+├── docs/            # System and API documentation
+└── package.json     # Workspace management
 ```
 
-## Demo accounts
+## Testing and Verification
 
-The frontend includes mock demo accounts for local testing. These are marked as `mock data only, not real credentials`.
-
-- Public user: `priya@demo.test` / `demo1234`
-- Officer: `officer@demo.test` / `demo1234`
-- Admin: `admin@demo.test` / `demo1234`
-
-Use them only for the local mock UI experience, not for any live or production service.
+- Frontend unit tests: `npm --prefix frontend test`
+- Frontend linting: `npm --prefix frontend run lint`
+- Frontend build: `npm --prefix frontend run build`
+- Backend test suite: `npm --prefix backend test`

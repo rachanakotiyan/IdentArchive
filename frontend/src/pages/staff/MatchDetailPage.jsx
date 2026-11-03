@@ -64,7 +64,7 @@ export default function MatchDetailPage() {
     };
   }, [matchId]);
 
-  // Confirm match (updates both cases in mock to resolved)
+  // Confirm match
   const handleConfirmMatch = async () => {
     setActionLoading(true);
     try {

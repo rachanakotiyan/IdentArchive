@@ -19,10 +19,18 @@
  * the persisted token and obtain the latest server-side profile.
  */
 
-import apiClient, { ApiError, setTokenProvider } from './apiClient.js';
+import apiClient, { ApiError, setTokenProvider, setUnauthorizedHandler } from './apiClient.js';
 
 const SESSION_KEY = 'ia-session';
 const TOKEN_KEY   = 'ia-token';
+
+// Automatically clear session and redirect to /login on 401 Unauthorized
+setUnauthorizedHandler(() => {
+  clearSession();
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Storage helpers (sessionStorage, safe in SSR / Node test environments)

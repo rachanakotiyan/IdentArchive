@@ -20,7 +20,7 @@ import { AuthContext } from './authContext.js';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => authService.getCurrentUser());
   const [loading, setLoading] = useState(false);
-  const [loadingSession, setLoadingSession] = useState(true);
+  const [loadingSession, setLoadingSession] = useState(() => Boolean(authService.getStoredToken()));
 
   // Track whether we've already attempted the initial session refresh.
   const sessionChecked = useRef(false);
@@ -35,9 +35,6 @@ export function AuthProvider({ children }) {
     const token = authService.getStoredToken();
 
     if (!token) {
-      // No stored token → skip the network call
-      setUser(null);
-      setLoadingSession(false);
       return;
     }
 

@@ -48,7 +48,7 @@ export function StaffLayout({ children }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [systemNoticeDismissed, setSystemNoticeDismissed] = useState(false);
 
-  const mockNotifications = [
+  const recentNotifications = [
     {
       id: 'notif-1',
       type: 'report_assigned',
@@ -99,16 +99,16 @@ export function StaffLayout({ children }) {
               }}
             >
               <Bell size={16} />
-              <span className="staff-bell-badge" aria-hidden="true">{mockNotifications.length}</span>
+              <span className="staff-bell-badge" aria-hidden="true">{recentNotifications.length}</span>
             </button>
             {notificationsOpen && (
               <div className="staff-notifications-dropdown" role="region" aria-label="Recent notifications">
                 <div className="staff-notifications-header">
                   <strong>Notifications</strong>
-                  <span className="staff-notifications-count">{mockNotifications.length} recent</span>
+                  <span className="staff-notifications-count">{recentNotifications.length} recent</span>
                 </div>
                 <div className="staff-notifications-list">
-                  {mockNotifications.map(n => (
+                  {recentNotifications.map(n => (
                     <Link
                       key={n.id}
                       to={n.to}

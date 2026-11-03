@@ -7,10 +7,10 @@ import Spinner from '../ui/Spinner.jsx';
  * Saves the intended destination in state so login can redirect back.
  */
 export function RequireAuth({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, loadingSession } = useAuth();
   const location = useLocation();
 
-  if (loading) return <Spinner fullPage />;
+  if (loading || loadingSession) return <Spinner fullPage />;
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -23,9 +23,10 @@ export function RequireAuth({ children }) {
  * @param {string[]} allowedRoles
  */
 export function RequireRole({ allowedRoles, children }) {
-  const { user } = useAuth();
+  const { user, loading, loadingSession } = useAuth();
   const location = useLocation();
 
+  if (loading || loadingSession) return <Spinner fullPage />;
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

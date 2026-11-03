@@ -38,17 +38,30 @@ function reportView(report = {}) {
 }
 
 function trackView(report = {}) {
-  const item = reportView(report);
-  const statusLabel = STATUS_LABELS[item.status] ?? item.status;
-  const date = item.dateReported || item.createdDate?.slice?.(0, 10) || '';
+  const refNo = report.reference_no ?? report.referenceNo;
+  const status = report.status;
+  const statusLabel = STATUS_LABELS[status] ?? status;
+  const reportType = report.report_type ?? report.reportType;
+  const createdAt = report.created_at ?? report.createdAt;
+  const updatedAt = report.updated_at ?? report.updatedAt;
+  const personName = report.person_name ?? report.personName;
+  const history = report.history || [];
+  const timeline = history.length > 0
+    ? history.map((h) => ({
+        statusLabel: h.event,
+        date: h.created_at || createdAt || '',
+      }))
+    : [{ statusLabel, date: updatedAt || createdAt || '' }];
+
   return {
-    referenceNo: item.referenceNo,
-    reportType: item.reportType,
-    status: item.status,
+    referenceNo: refNo,
+    reportType,
+    status,
     statusLabel,
-    createdDate: item.createdDate,
-    timeline: [{ statusLabel, date }],
-    infoMessage: item.status === 'info_requested'
+    personName,
+    createdDate: createdAt,
+    timeline,
+    infoMessage: status === 'info_requested'
       ? 'An officer needs more information. Check your email or contact the helpline.'
       : null,
   };
@@ -96,10 +109,12 @@ export async function getMyReports() {
 export const listMyReports = getMyReports;
 
 /**
- * Track a report using its reference number and tracking PIN.
+ * Track a report using its reference number and reporter email.
  */
-export async function trackReport(referenceNo, pin) {
-  const endpoint = `/reports/track/${encodeURIComponent(referenceNo)}?pin=${encodeURIComponent(pin)}`;
-  const response = await apiClient.get(endpoint);
+export async function trackReport(referenceNo, email) {
+  const response = await apiClient.post('/reports/track', {
+    reference_no: typeof referenceNo === 'string' ? referenceNo.trim() : referenceNo,
+    email: typeof email === 'string' ? email.trim() : email,
+  });
   return trackView(getResponseData(response));
 }

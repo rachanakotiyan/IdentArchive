@@ -90,7 +90,7 @@ export default function StaffReportDetailPage() {
     };
   }, [reloadKey, reportId]);
 
-  // 1. Approve action (creates a case in the mock)
+  // 1. Approve action
   const handleApprove = async () => {
     setActionLoading(true);
     try {

@@ -394,11 +394,7 @@ export async function apiRequest(endpoint, options = {}) {
   let processedData = responseData;
   for (const handler of responseInterceptors.handlers) {
     if (handler && handler.fulfilled) {
-      try {
-        processedData = await handler.fulfilled(processedData);
-      } catch (chainErr) {
-        throw chainErr;
-      }
+      processedData = await handler.fulfilled(processedData);
     }
   }
 

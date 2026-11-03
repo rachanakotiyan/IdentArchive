@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
           onChange={(event) => setEmail(event.target.value)}
           required
         />
-        <Button type="submit" className="auth-form__submit" loading={loading}>
+        <Button type="submit" className="auth-form__submit" loading={loading} disabled={loading}>
           {loading ? 'Sending…' : 'Send reset link'}
         </Button>
       </form>

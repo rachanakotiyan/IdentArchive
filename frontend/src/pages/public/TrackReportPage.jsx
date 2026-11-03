@@ -8,10 +8,11 @@ import * as reportService from '../../services/reportService.js';
 import { PublicLayout } from '../../components/layout/PublicLayout.jsx';
 import '../report/ReportPages.css';
 
-const NOT_FOUND_MESSAGE = 'No report found for those details.';
+const NOT_FOUND_MESSAGE = 'No report found matching the provided reference number and email address.';
 
 function getDate(date) {
-  const parsed = new Date(`${date}T00:00:00`);
+  if (!date) return '';
+  const parsed = new Date(date.includes('T') ? date : `${date}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString();
 }
 
@@ -19,7 +20,7 @@ export default function TrackReportPage() {
   useDocumentTitle('Track a report');
   const [searchParams] = useSearchParams();
   const [referenceNo, setReferenceNo] = useState(searchParams.get('referenceNo') || '');
-  const [pin, setPin] = useState('');
+  const [email, setEmail] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,11 +33,11 @@ export default function TrackReportPage() {
     setResult(null);
     setError('');
     setNotFound(false);
-    if (!referenceNo.trim() || !pin.trim()) return;
+    if (!referenceNo.trim() || !email.trim()) return;
 
     setLoading(true);
     try {
-      const report = await reportService.trackReport(referenceNo.trim(), pin.trim());
+      const report = await reportService.trackReport(referenceNo.trim(), email.trim());
       setResult(report);
     } catch (requestError) {
       if (requestError?.status === 404 || requestError?.code === 'NOT_FOUND') {
@@ -55,7 +56,7 @@ export default function TrackReportPage() {
         <header className="track-page__header">
           <p className="report-page__eyebrow">Private report lookup</p>
           <h1>Track a report</h1>
-          <p>Enter the reference number and tracking PIN from your report confirmation.</p>
+          <p>Enter the reference number and email address provided when filing the report.</p>
         </header>
 
         <form className="track-page__form" onSubmit={handleSubmit} noValidate>
@@ -71,18 +72,20 @@ export default function TrackReportPage() {
             required
           />
           <TextField
-            id="track-pin"
-            label="Tracking PIN"
-            type="password"
-            autoComplete="off"
-            value={pin}
-            onChange={(event) => { setPin(event.target.value); setResult(null); setNotFound(false); }}
+            id="track-email"
+            label="Reporter email address"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => { setEmail(event.target.value); setResult(null); setNotFound(false); }}
             onBlur={() => setTouched(true)}
-            error={touched && !pin.trim() ? 'Enter the tracking PIN.' : ''}
+            error={touched && !email.trim() ? 'Enter the reporter email address.' : ''}
             required
           />
           {error && <p className="auth-form__error" role="alert">{error}</p>}
-          <Button type="submit" loading={loading}>{loading ? 'Checking…' : 'Check report status'}</Button>
+          <Button type="submit" loading={loading} disabled={loading}>
+            {loading ? 'Checking…' : 'Check report status'}
+          </Button>
         </form>
 
         {notFound && <p className="auth-form__error" role="status">{NOT_FOUND_MESSAGE}</p>}
@@ -91,10 +94,11 @@ export default function TrackReportPage() {
           <section className="track-result" aria-labelledby="track-result-title">
             <h2 id="track-result-title">Report status</h2>
             <p className="track-result__reference">{result.referenceNo}</p>
+            {result.personName && <p style={{ color: 'var(--ink)', fontWeight: 600 }}>{result.personName}</p>}
             <StatusStamp kind="report" status={result.status} />
             {result.infoMessage && <p className="track-result__info">{result.infoMessage}</p>}
             <ol className="track-timeline" aria-label="Report status timeline">
-              {result.timeline.map((item, index) => (
+              {(result.timeline || []).map((item, index) => (
                 <li className="track-timeline__item" key={`${item.statusLabel}-${item.date}-${index}`}>
                   <strong>{item.statusLabel}</strong>
                   <time dateTime={item.date}>{getDate(item.date)}</time>

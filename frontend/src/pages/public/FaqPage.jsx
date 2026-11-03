@@ -4,66 +4,82 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 
 const FAQ_ITEMS = [
   {
-    question: 'Is IdentArchive connected to a live police or government system?',
-    answer: 'No. This is a frontend demonstration with mock accounts and sample records. Reports submitted here do not reach law enforcement. Call 112 or contact your local police for real assistance.',
+    question: 'Is IdentArchive connected to an emergency dispatch system?',
+    answer: 'No. Reports submitted here are processed by investigating officers. For immediate life-safety emergencies, please call 112 or your local police station directly.',
   },
   {
-    question: 'How do I submit a missing- or found-person report in the demo?',
-    answer: 'Sign in with the public demo account and open Report. The form guides you through the required steps and displays a confirmation reference when submitted.',
+    question: 'How do I submit a missing- or found-person report?',
+    answer: 'Sign in to your account and select Submit Report. The form guides you through the required steps and provides an official reference number upon submission.',
   },
   {
-    question: 'How can I check the status of a demo report?',
-    answer: 'Open Track Report and enter the reference number and reporter email used for the sample report. Signed-in public users can also review their reports from My Reports.',
+    question: 'How can I check the status of a submitted report?',
+    answer: 'Open Track Report and enter your reference number and registered email address. Signed-in users can also monitor all their submissions under My Reports.',
   },
   {
     question: 'Who can see personal details entered in a report?',
-    answer: 'The demo separates public case information from reporter details in its interface. Do not enter real personal information: this prototype has no production security or data-handling guarantees.',
+    answer: 'Public case views strictly omit reporter contact details and internal review notes. Only authorized investigating officers and administrators have access to sensitive records.',
   },
   {
     question: 'What should I do if someone is missing or in immediate danger?',
-    answer: 'Contact the police immediately; call 112 in an emergency. There is no need to wait before reporting a missing person. The demo is not an emergency reporting channel.',
+    answer: 'Contact the police immediately; call 112 in an emergency. There is no need to wait before reporting a missing person.',
   },
 ];
 
 export default function FaqPage() {
-  useDocumentTitle('FAQ');
-
+  useDocumentTitle('Frequently Asked Questions');
   return (
     <PublicLayout>
-      <section aria-labelledby="faq-page-title" style={{ display: 'grid', gap: 'var(--sp-5)', maxWidth: '72ch', margin: '0 auto', padding: 'var(--sp-8) var(--sp-4)' }}>
-        <header>
-          <p style={{ color: 'var(--accent)', fontSize: 'var(--text-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Help
-          </p>
-          <h1 id="faq-page-title">Frequently asked questions</h1>
-          <p style={{ color: 'var(--muted)', lineHeight: 'var(--leading-loose)' }}>
-            Answers about using this demonstration and where to get real-world help.
-          </p>
-        </header>
-        <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-          {FAQ_ITEMS.map(({ question, answer }) => (
-            <details
-              key={question}
+      <div
+        style={{
+          maxWidth: 'var(--container-md)',
+          margin: '0 auto',
+          padding: 'var(--sp-8) var(--sp-4)',
+        }}
+      >
+        <h1 style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--sp-2)' }}>
+          Frequently Asked Questions
+        </h1>
+        <p style={{ color: 'var(--muted)', marginBottom: 'var(--sp-8)' }}>
+          Common questions about filing reports, tracking status, and public case listings.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)' }}>
+          {FAQ_ITEMS.map((item, index) => (
+            <section
+              key={index}
               style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--line)',
-                borderRadius: 'var(--radius-md)',
-                padding: 'var(--sp-4)',
+                borderBottom: '1px solid var(--line)',
+                paddingBottom: 'var(--sp-6)',
               }}
             >
-              <summary style={{ color: 'var(--ink)', cursor: 'pointer', fontWeight: 600 }}>
-                {question}
-              </summary>
-              <p style={{ color: 'var(--muted)', lineHeight: 'var(--leading-loose)', margin: 'var(--sp-3) 0 0' }}>
-                {answer}
+              <h2
+                style={{
+                  fontSize: 'var(--text-lg)',
+                  color: 'var(--ink)',
+                  marginBottom: 'var(--sp-2)',
+                }}
+              >
+                {item.question}
+              </h2>
+              <p
+                style={{
+                  color: 'var(--muted)',
+                  lineHeight: 'var(--leading-loose)',
+                }}
+              >
+                {item.answer}
               </p>
-            </details>
+            </section>
           ))}
         </div>
-        <p style={{ color: 'var(--muted)', lineHeight: 'var(--leading-loose)' }}>
-          For more safety guidance and contact numbers, visit <Link to="/safety">Safety &amp; guidance</Link>.
-        </p>
-      </section>
+
+        <div style={{ marginTop: 'var(--sp-8)' }}>
+          <p style={{ color: 'var(--muted)' }}>
+            Need emergency support or crisis counseling? Review our{' '}
+            <Link to="/safety">Safety and Helplines directory</Link>.
+          </p>
+        </div>
+      </div>
     </PublicLayout>
   );
 }

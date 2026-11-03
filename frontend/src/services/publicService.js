@@ -1,9 +1,4 @@
 import apiClient from './apiClient.js';
-import { MOCK_CASES } from '../mock/cases.js';
-import { MOCK_PINCODES } from '../mock/pincodes.js';
-import { withLatency } from '../mock/latency.js';
-
-const PUBLIC_STATUSES = ['open', 'under_review', 'resolved'];
 
 function caseView(record = {}) {
   return {
@@ -107,21 +102,11 @@ export async function getCase(caseNumber) {
 }
 
 export async function getPublicStats() {
-  return withLatency(() => {
-    const publicCases = MOCK_CASES.filter((item) => PUBLIC_STATUSES.includes(item.caseStatus));
-    return {
-      activeCases: publicCases.filter((item) => item.caseStatus === 'open').length,
-      underReview: publicCases.filter((item) => item.caseStatus === 'under_review').length,
-      resolvedCases: publicCases.filter((item) => item.caseStatus === 'resolved').length,
-      reportsThisWeek: 4,
-    };
-  });
+  const response = await apiClient.get('/public/stats');
+  return getResponseData(response);
 }
 
 export async function getPinInfo(pincode) {
-  return withLatency(() => {
-    const info = MOCK_PINCODES[pincode];
-    if (!info) throw new Error('Pincode not found in the demo database.');
-    return info;
-  });
+  const response = await apiClient.get(`/pincodes/${encodeURIComponent(pincode)}`);
+  return getResponseData(response);
 }

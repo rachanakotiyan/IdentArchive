@@ -38,7 +38,7 @@ export function EmptyState({
  * ErrorState
  * @param {string} title
  * @param {string} description
- * @param {string} error - raw error message (shown in smaller text)
+ * @param {string|object} error - raw error message or ApiError object
  * @param {Function} onRetry
  */
 export function ErrorState({
@@ -48,14 +48,24 @@ export function ErrorState({
   onRetry,
   className = '',
 }) {
+  const is403 =
+    (typeof error === 'object' && (error?.status === 403 || error?.code === 'FORBIDDEN')) ||
+    (typeof error === 'string' &&
+      (error.includes('403') || error.toLowerCase().includes('access denied') || error.toLowerCase().includes('forbidden')));
+
+  const displayTitle = is403 ? 'Access denied' : title;
+  const displayDescription = is403
+    ? 'You do not have permission to view or perform this action.'
+    : description;
+
   return (
     <div className={`error-state ${className}`} role="alert">
       <AlertCircle size={48} strokeWidth={1} className="error-state__icon" />
-      <p className="error-state__title">{title}</p>
-      <p className="error-state__description">{description}</p>
-      {error && (
+      <p className="error-state__title">{displayTitle}</p>
+      <p className="error-state__description">{displayDescription}</p>
+      {error && !is403 && (
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-          {error}
+          {typeof error === 'object' ? error.message : error}
         </p>
       )}
       {onRetry && (

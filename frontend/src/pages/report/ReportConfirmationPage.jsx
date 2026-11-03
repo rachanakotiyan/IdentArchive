@@ -41,7 +41,7 @@ export default function ReportConfirmationPage() {
         </section>
         {copyMessage && <p className="report-confirmation__copy-status" role="status">{copyMessage}</p>}
 
-        <p className="report-confirmation__copy-status">A copy has been sent to your email (mock).</p>
+        <p className="report-confirmation__copy-status">A confirmation has been recorded for your reference.</p>
 
         <section className="report-confirmation__next">
           <h2>What happens next</h2>
