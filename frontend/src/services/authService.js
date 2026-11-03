@@ -66,10 +66,31 @@ function safeRemove(key) {
   }
 }
 
+function normalizeUserProfile(user) {
+  if (!user || typeof user !== 'object') return user;
+
+  const normalized = { ...user };
+  if (normalized.userId === undefined && typeof normalized.user_id === 'string' && normalized.user_id.trim()) {
+    normalized.userId = normalized.user_id.trim();
+  }
+  if (normalized.userId === undefined && typeof normalized.id === 'string' && normalized.id.trim()) {
+    normalized.userId = normalized.id.trim();
+  }
+  if (normalized.user_id === undefined && typeof normalized.userId === 'string' && normalized.userId.trim()) {
+    normalized.user_id = normalized.userId.trim();
+  }
+  if (normalized.id === undefined && typeof normalized.userId === 'string' && normalized.userId.trim()) {
+    normalized.id = normalized.userId.trim();
+  }
+
+  return normalized;
+}
+
 function writeSession(token, user) {
   safeSet(TOKEN_KEY, token);
+  const normalizedUser = normalizeUserProfile(user);
   // Never persist password-related fields
-  const { password: _pw, password_hash: _ph, ...safe } = user;
+  const { password: _pw, password_hash: _ph, ...safe } = normalizedUser;
   safeSet(SESSION_KEY, JSON.stringify(safe));
   // Inject into apiClient immediately so next requests carry the token
   apiClient.setToken(token);
@@ -108,7 +129,12 @@ export function getCurrentUser() {
   const raw = safeGet(SESSION_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.user && typeof parsed.user === 'object' && !('name' in parsed)) {
+      return normalizeUserProfile(parsed.user);
+    }
+    return normalizeUserProfile(parsed);
   } catch {
     return null;
   }
@@ -187,16 +213,20 @@ export async function login({ email, password }) {
 export async function fetchCurrentUser() {
   const response = await apiClient.get('/auth/me');
 
-  // Backend returns: { success: true, data: { user_id, name, email, role, ... } }
-  const user = response?.data ?? response;
+  // Backend returns: { success: true, data: { user: { ...profile } } }
+  const payload = response?.data ?? response;
+  const user = (payload && typeof payload === 'object' && payload.user && typeof payload.user === 'object')
+    ? payload.user
+    : payload;
+  const normalizedUser = normalizeUserProfile(user);
 
   // Refresh the session profile cache without changing the stored token
-  if (user && typeof user === 'object') {
-    const { password: _pw, password_hash: _ph, ...safe } = user;
+  if (normalizedUser && typeof normalizedUser === 'object') {
+    const { password: _pw, password_hash: _ph, ...safe } = normalizedUser;
     safeSet(SESSION_KEY, JSON.stringify(safe));
   }
 
-  return user;
+  return normalizedUser;
 }
 
 /**

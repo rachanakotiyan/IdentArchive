@@ -276,6 +276,27 @@ test('fetchCurrentUser: GETs /api/auth/me with Bearer token and refreshes sessio
   }
 });
 
+test('fetchCurrentUser: unwraps nested /auth/me payload and normalizes userId for report flows', async () => {
+  resetStorage();
+  mockSessionStorage.setItem('ia-token', FAKE_TOKEN);
+  apiClient.setToken(FAKE_TOKEN);
+
+  const restore = mockFetch(async () =>
+    makeResponse({ success: true, data: { user: { id: 'usr-001', name: 'Priya Sharma', email: 'priya@test.local', role: 'individual', phone: '9876543210' } } })
+  );
+
+  try {
+    const user = await fetchCurrentUser();
+    assert.equal(user.userId, 'usr-001');
+    assert.equal(user.name, 'Priya Sharma');
+    assert.equal(getCurrentUser()?.userId, 'usr-001');
+    assert.equal(getCurrentUser()?.email, 'priya@test.local');
+  } finally {
+    restore();
+    resetStorage();
+  }
+});
+
 test('fetchCurrentUser: throws ApiError on 401 (expired token)', async () => {
   resetStorage();
   mockSessionStorage.setItem('ia-token', 'expired-token');
