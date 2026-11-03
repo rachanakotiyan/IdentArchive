@@ -208,14 +208,41 @@ export async function createReport(conn, overrides = {}) {
   const location_district = overrides.locationDistrict || 'Bangalore Urban'
   const location_state = overrides.locationState || 'Karnataka'
   const case_id = overrides.caseId !== undefined ? overrides.caseId : null
+  const status = overrides.status || 'submitted'
+  const priority = overrides.priority || 'normal'
+  const review_note = overrides.reviewNote !== undefined ? overrides.reviewNote : null
+
+  // Resolve assigned_officer_id: accept a direct officer_id or look up by user_id
+  let assigned_officer_id = null
+  if (overrides.assignedOfficerId != null) {
+    // Check if the value is a valid officer_id
+    const [offRows] = await conn.execute(
+      'SELECT officer_id FROM officers WHERE officer_id = ? LIMIT 1',
+      [overrides.assignedOfficerId]
+    )
+    if (offRows.length > 0) {
+      assigned_officer_id = overrides.assignedOfficerId
+    } else {
+      // Fall back: treat it as a user_id and look up officer_id
+      const [userOffRows] = await conn.execute(
+        'SELECT officer_id FROM officers WHERE user_id = ? LIMIT 1',
+        [overrides.assignedOfficerId]
+      )
+      if (userOffRows.length > 0) {
+        assigned_officer_id = userOffRows[0].officer_id
+      }
+      // If still not found, leave as null (FK-safe)
+    }
+  }
 
   await conn.execute(
     `INSERT INTO reports (
       report_id, reference_no, report_type, reporter_id, reporter_name,
       reporter_phone, reporter_email, gender, description, event_date,
       location_address, location_pincode, location_city, location_district,
-      location_state, case_id, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      location_state, case_id, assigned_officer_id, status, priority, review_note,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     [
       report_id,
       reference_no,
@@ -233,6 +260,10 @@ export async function createReport(conn, overrides = {}) {
       location_district,
       location_state,
       case_id,
+      assigned_officer_id,
+      status,
+      priority,
+      review_note,
     ]
   )
 

@@ -138,30 +138,31 @@ export async function getMatchById(matchId) {
 }
 
 /**
- * Record an officer's verification decision on a match, updating the match status atomically.
+ * Record an officer's or admin's verification decision on a match, updating the match status atomically.
  *
- * The function:
- *  1. Looks up the active officer profile for the given `officerUserId`.
- *  2. Validates that the match exists and is in a state that allows verification.
- *  3. Inserts a row into `match_verifications`.
- *  4. Updates `matches.status` to the action decision.
- * All steps run inside a single database transaction that is rolled back on any error.
+ * Rules:
+ * - Officers verify only matches where a case is linked to their reports.
+ * - Admins can verify any match.
+ * - Verification + match status update occur in a single database transaction.
  *
- * @param {string} matchId         - UUID of the match to verify
- * @param {string} officerUserId   - `users.user_id` of the reviewing officer
- * @param {'confirmed'|'dismissed'} action - Verification decision
- * @param {string} [notes='']      - Officer remarks (stored as verification notes/remarks)
- * @returns {Promise<object>}      - Updated match row with the new verification attached
- * @throws {AppError}              - 400 on invalid inputs, 404 if not found, 409 if already decided
+ * @param {string} matchId                  - UUID of the match to verify
+ * @param {string|object} userOrId          - `users.user_id` or `{ userId, role }` of the caller
+ * @param {'confirmed'|'dismissed'} action  - Verification decision
+ * @param {string} [notes='']               - Officer remarks
+ * @returns {Promise<object>}               - Updated match row with the new verification attached
+ * @throws {AppError}
  */
-export async function verifyMatch(matchId, officerUserId, action, notes = '') {
+export async function verifyMatch(matchId, userOrId, action, notes = '') {
   // --- Input validation (before touching the DB) ---
   if (!matchId || String(matchId).trim() === '') {
     throw new AppError('matchId is required.', 400, 'VALIDATION_ERROR')
   }
-  if (!officerUserId || String(officerUserId).trim() === '') {
+
+  const userId = typeof userOrId === 'object' ? userOrId?.userId : userOrId
+  if (!userId || String(userId).trim() === '') {
     throw new AppError('officerUserId is required.', 400, 'VALIDATION_ERROR')
   }
+
   const normAction = typeof action === 'string' ? action.trim().toLowerCase() : ''
   if (!VALID_ACTIONS.includes(normAction)) {
     throw new AppError(
@@ -175,35 +176,28 @@ export async function verifyMatch(matchId, officerUserId, action, notes = '') {
     throw new AppError('Notes/remarks are required for a verification decision.', 400, 'VALIDATION_ERROR')
   }
 
+  let role = typeof userOrId === 'object' ? userOrId?.role : null
+  if (!role) {
+    const [uRows] = await pool.execute('SELECT role FROM users WHERE user_id = ? LIMIT 1', [userId])
+    role = uRows[0]?.role || 'officer'
+  }
+
   const connection = await pool.getConnection()
   try {
     await connection.beginTransaction()
 
-    // 1. Resolve the officer profile from the authenticated user_id
-    const [officerRows] = await connection.execute(
-      'SELECT officer_id FROM officers WHERE user_id = ? AND active = 1 LIMIT 1',
-      [String(officerUserId).trim()]
-    )
-    const officer = officerRows[0]
-    if (!officer) {
-      throw new AppError(
-        'Active officer profile not found for this user.',
-        403,
-        'FORBIDDEN'
-      )
-    }
-    const { officer_id } = officer
-
-    // 2. Lock and validate the match row
+    // 1. Lock and validate the match row
     const [matchRows] = await connection.execute(
-      'SELECT match_id, status FROM matches WHERE match_id = ? LIMIT 1 FOR UPDATE',
+      'SELECT match_id, missing_case_id, found_case_id, status FROM matches WHERE match_id = ? LIMIT 1 FOR UPDATE',
       [String(matchId).trim()]
     )
     const match = matchRows[0]
     if (!match) {
+      await connection.rollback()
       throw new AppError('Match not found.', 404, 'NOT_FOUND')
     }
     if (match.status !== 'pending') {
+      await connection.rollback()
       throw new AppError(
         `Match has already been decided (current status: "${match.status}"). Only pending matches can be verified.`,
         409,
@@ -211,11 +205,63 @@ export async function verifyMatch(matchId, officerUserId, action, notes = '') {
       )
     }
 
+    // 2. Resolve officer and verify scoping
+    let verifyingOfficerId = null
+    if (role === 'officer') {
+      const [officerRows] = await connection.execute(
+        'SELECT officer_id FROM officers WHERE user_id = ? AND active = 1 LIMIT 1',
+        [String(userId).trim()]
+      )
+      const officer = officerRows[0]
+      if (!officer) {
+        await connection.rollback()
+        throw new AppError('Active officer profile not found for this user.', 403, 'FORBIDDEN')
+      }
+      verifyingOfficerId = officer.officer_id
+
+      // Check linked reports for missing or found case
+      const [reportRows] = await connection.execute(
+        'SELECT report_id, assigned_officer_id FROM reports WHERE case_id IN (?, ?)',
+        [match.missing_case_id, match.found_case_id]
+      )
+
+      if (reportRows.length > 0) {
+        const hasAssignedReport = reportRows.some((r) => r.assigned_officer_id === verifyingOfficerId)
+        if (!hasAssignedReport) {
+          await connection.rollback()
+          throw new AppError('Officers can only verify matches linked to their assigned reports.', 403, 'FORBIDDEN')
+        }
+      }
+    } else if (role === 'admin') {
+      // Admin can verify any match
+      const [officerRows] = await connection.execute(
+        'SELECT officer_id FROM officers WHERE user_id = ? AND active = 1 LIMIT 1',
+        [String(userId).trim()]
+      )
+      if (officerRows[0]) {
+        verifyingOfficerId = officerRows[0].officer_id
+      } else {
+        // Find an active officer to satisfy foreign key constraint on match_verifications.officer_id
+        const [activeOfficers] = await connection.execute(
+          'SELECT officer_id FROM officers WHERE active = 1 ORDER BY created_at ASC LIMIT 1'
+        )
+        if (activeOfficers[0]) {
+          verifyingOfficerId = activeOfficers[0].officer_id
+        } else {
+          await connection.rollback()
+          throw new AppError('No active officer found to record verification.', 500, 'INTERNAL_SERVER_ERROR')
+        }
+      }
+    } else {
+      await connection.rollback()
+      throw new AppError('Access denied.', 403, 'FORBIDDEN')
+    }
+
     // 3. Insert verification record into match_verifications
     await connection.execute(
       `INSERT INTO match_verifications (match_id, officer_id, decision, remarks, verification_date)
        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [match.match_id, officer_id, normAction, remarks]
+      [match.match_id, verifyingOfficerId, normAction, remarks]
     )
 
     // 4. Update matches.status to reflect the decision
@@ -226,7 +272,7 @@ export async function verifyMatch(matchId, officerUserId, action, notes = '') {
 
     await connection.commit()
 
-    // Return the fully enriched match row (uses pool, outside transaction)
+    // Return the fully enriched match row (outside transaction)
     const updated = await getMatchById(match.match_id)
     return updated
   } catch (error) {

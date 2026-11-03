@@ -83,6 +83,59 @@ export async function emailExists(email, conn = null) {
 }
 
 /**
+ * List all users with pagination and optional search filter.
+ * NEVER selects or returns password_hash.
+ *
+ * @param {object} options
+ * @param {number} [options.page=1]
+ * @param {number} [options.limit=20]
+ * @param {string} [options.q]
+ * @param {string} [options.role]
+ * @returns {Promise<Array<object>&{ total: number, page: number, limit: number, totalPages: number }>}
+ */
+export async function listUsers({ page = 1, limit = 20, q = '', role = '' } = {}) {
+  const safePage = Math.max(1, Math.trunc(Number(page) || 1))
+  const safeLimit = Math.min(100, Math.max(1, Math.trunc(Number(limit) || 20)))
+  const offset = (safePage - 1) * safeLimit
+
+  const where = []
+  const params = []
+
+  if (role && ['individual', 'officer', 'admin'].includes(role.toLowerCase().trim())) {
+    where.push('role = ?')
+    params.push(role.toLowerCase().trim())
+  }
+
+  if (q && String(q).trim()) {
+    const term = `%${String(q).trim()}%`
+    where.push('(name LIKE ? OR email LIKE ? OR phone LIKE ?)')
+    params.push(term, term, term)
+  }
+
+  const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+
+  const countSql = `SELECT COUNT(*) AS total FROM users ${whereClause}`
+  const [countRows] = await pool.execute(countSql, params)
+  const total = Number(countRows[0]?.total || 0)
+
+  const selectSql = `
+    SELECT ${PUBLIC_COLS}
+    FROM users
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `
+  const [rows] = await pool.execute(selectSql, [...params, safeLimit, offset])
+
+  rows.total = total
+  rows.page = safePage
+  rows.limit = safeLimit
+  rows.totalPages = Math.ceil(total / safeLimit) || 1
+
+  return rows
+}
+
+/**
  * List officer and admin accounts without selecting password hashes.
  *
  * @returns {Promise<Array<object>>}

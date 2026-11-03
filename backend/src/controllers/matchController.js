@@ -101,7 +101,7 @@ export const verifyMatch = async (req, res, next) => {
 
     const updatedMatch = await matchRepo.verifyMatch(
       String(matchId).trim(),
-      officerUserId,
+      req.user,
       effectiveAction.trim(),
       effectiveNotes.trim()
     )
